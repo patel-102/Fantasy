@@ -2,88 +2,67 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>My Profile</title>
+<title>Profile Dashboard</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; transition: all 0.3s ease; }
-  body { font-family: 'Inter', sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; }
-  body.dark-mode { background: #1f2937; }
-
-  .card {
-    background: #fff;
-    border-radius: 16px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-    width: 100%;
-    max-width: 400px;
-    padding: 30px 25px;
-    text-align: center;
-    position: relative;
-    animation: fadeIn 0.6s ease forwards;
-  }
-  body.dark-mode .card { background: #111827; color: #f3f4f6; }
-  @keyframes fadeIn { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
-  .card:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(0,0,0,0.15); }
-
-  h2 { font-weight: 600; font-size: 1.6rem; color: #111827; margin-bottom: 20px; }
-  body.dark-mode h2 { color: #f3f4f6; }
-
-  .profile-pic-wrapper { position: relative; width: 110px; height: 110px; margin: 0 auto 15px auto; }
-  .profile-pic { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 2px solid #4f46e5; transition: all 0.3s ease; }
-  .profile-pic-wrapper:hover .profile-pic { transform: scale(1.08) rotate(-2deg); }
-
-  .edit-icon { position: absolute; bottom: 0; right: 0; background: #4f46e5; border-radius: 50%; width: 30px; height: 30px; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.15); transition: all 0.3s ease; }
-  .edit-icon:hover { background: #6366f1; transform: scale(1.1); }
-  .edit-icon::before { content: "✎"; color: #fff; font-size: 14px; }
-
-  .form-group { position: relative; }
-  .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px 14px; margin: 10px 0; border-radius: 12px; border: 1px solid #d1d5db; font-size: 0.95rem; outline: none; background: #fff; color: #111827; transition: all 0.3s ease; }
-  body.dark-mode .form-group input, body.dark-mode .form-group select, body.dark-mode .form-group textarea { background: #1f2937; color: #f3f4f6; border-color: #374151; }
-  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #4f46e5; box-shadow: 0 0 6px rgba(79,70,229,0.3); transform: scale(1.02); }
-  .form-group label { position: absolute; top: 12px; left: 14px; font-size: 0.85rem; color: #6b7280; pointer-events: none; transition: all 0.2s ease; background: transparent; padding: 0 4px; }
-  .form-group input:focus + label, .form-group input:not(:placeholder-shown) + label, .form-group select:focus + label, .form-group select:not([value=""]) + label, .form-group textarea:focus + label, .form-group textarea:not(:placeholder-shown) + label { top: -8px; left: 12px; font-size: 0.75rem; color: #4f46e5; background: #fff; }
-  body.dark-mode .form-group input:focus + label, body.dark-mode .form-group select:focus + label, body.dark-mode .form-group textarea:focus + label { background: #111827; color: #6366f1; }
-
-  button { width: 100%; padding: 12px; margin-top: 15px; border: none; border-radius: 12px; font-weight: 500; cursor: pointer; position: relative; overflow: hidden; transition: all 0.3s ease; }
-  #saveBtn { background: #4f46e5; color: #fff; } #saveBtn:hover { background: #6366f1; transform: translateY(-2px) scale(1.02); }
-  #logoutBtn { background: #ef4444; color: #fff; } #logoutBtn:hover { background: #f87171; transform: translateY(-2px) scale(1.02); }
-
-  #msg { margin-top: 12px; font-size: 0.9rem; opacity: 0; transform: translateY(10px); transition: all 0.5s ease; }
-  #msg.show { opacity: 1; transform: translateY(0); }
-
-  #darkModeToggle { position: absolute; top: 15px; right: 15px; background: #4f46e5; border: none; color: #fff; padding: 6px 10px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; }
-  #darkModeToggle:hover { background: #6366f1; }
-
-  /* Live preview */
-  #previewName { font-weight: 600; margin-top: 8px; font-size: 1.1rem; color: #111827; transition: all 0.3s ease; }
-  #previewBio { font-size: 0.9rem; color: #6b7280; transition: all 0.3s ease; margin-bottom: 12px; }
-  body.dark-mode #previewName { color: #f3f4f6; }
-  body.dark-mode #previewBio { color: #d1d5db; }
+  *{box-sizing:border-box;margin:0;padding:0;transition:all 0.3s ease;}
+  body{font-family:'Inter',sans-serif;background:#f0f2f5;display:flex;justify-content:center;align-items:center;height:100vh;}
+  body.dark-mode{background:#1f2937;color:#f3f4f6;}
+  .card{background:#fff;border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,0.1);width:100%;max-width:400px;padding:30px 25px;text-align:center;position:relative;animation:fadeIn 0.6s ease forwards;}
+  body.dark-mode .card{background:#111827;color:#f3f4f6;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+  .profile-pic-wrapper{position:relative;width:110px;height:110px;margin:0 auto 15px auto;}
+  .profile-pic{width:100%;height:100%;border-radius:50%;object-fit:cover;border:2px solid #4f46e5;transition:all 0.3s ease;}
+  .profile-pic-wrapper:hover .profile-pic{transform:scale(1.08) rotate(-2deg);}
+  .mini-edit{position:absolute;bottom:0;right:0;width:28px;height:28px;border-radius:50%;background:#4f46e5;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;box-shadow:0 2px 6px rgba(0,0,0,0.15);}
+  .mini-edit:hover{background:#6366f1;}
+  .micro-logout{position:absolute;top:10px;right:10px;width:28px;height:28px;border-radius:50%;background:#ef4444;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;box-shadow:0 2px 6px rgba(0,0,0,0.15);}
+  .micro-logout:hover{background:#f87171;}
+  #previewName{font-weight:600;margin-top:8px;font-size:1.1rem;color:#111827;transition:all 0.3s ease;}
+  #previewBio{font-size:0.9rem;color:#6b7280;transition:all 0.3s ease;margin-bottom:6px;}
+  #previewAge{font-size:0.85rem;color:#6b7280;margin-bottom:12px;transition:all 0.3s ease;}
+  body.dark-mode #previewName{color:#f3f4f6;}
+  body.dark-mode #previewBio, body.dark-mode #previewAge{color:#d1d5db;}
+  .form-group{position:relative;margin-top:10px;}
+  .form-group input,.form-group select,.form-group textarea{width:100%;padding:10px 12px;border-radius:10px;border:1px solid #d1d5db;font-size:0.95rem;outline:none;background:#fff;color:#111827;transition:all 0.3s ease;}
+  body.dark-mode .form-group input,body.dark-mode .form-group select,body.dark-mode .form-group textarea{background:#1f2937;color:#f3f4f6;border-color:#374151;}
+  .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:#4f46e5;box-shadow:0 0 6px rgba(79,70,229,0.3);}
+  .form-group label{position:absolute;top:12px;left:12px;font-size:0.85rem;color:#6b7280;pointer-events:none;transition:all 0.2s ease;background:transparent;padding:0 4px;}
+  .form-group input:focus + label,.form-group input:not(:placeholder-shown)+label,
+  .form-group select:focus + label,.form-group select:not([value=""])+label,
+  .form-group textarea:focus + label,.form-group textarea:not(:placeholder-shown)+label{top:-8px;left:10px;font-size:0.75rem;color:#4f46e5;background:#fff;}
+  body.dark-mode .form-group input:focus + label,body.dark-mode .form-group select:focus + label,body.dark-mode .form-group textarea:focus + label{background:#111827;color:#6366f1;}
+  #saveBtn{background:#4f46e5;color:#fff;margin-top:15px;border:none;padding:10px 12px;border-radius:10px;font-weight:500;cursor:pointer;transition:all 0.3s ease;display:none;width:100%;}
+  #saveBtn:hover{background:#6366f1;transform:scale(1.02);}
+  #msg{margin-top:12px;font-size:0.9rem;opacity:0;transform:translateY(10px);transition:all 0.5s ease;}
+  #msg.show{opacity:1;transform:translateY(0);}
+  #darkModeToggle{position:absolute;top:10px;left:10px;background:#4f46e5;color:#fff;padding:6px 10px;border-radius:8px;border:none;cursor:pointer;font-size:0.75rem;}
+  #darkModeToggle:hover{background:#6366f1;}
 </style>
 </head>
 <body>
 <div class="card">
-  <button id="darkModeToggle">🌙 Dark Mode</button>
-  <h2>My Profile</h2>
-
+  <button id="darkModeToggle">🌙</button>
+  <div class="micro-logout" id="logoutBtn">⎋</div>
   <div class="profile-pic-wrapper">
-    <img id="profilePic" src="default-avatar.png" alt="Profile Picture" class="profile-pic">
-    <div class="edit-icon" id="editPhoto"></div>
+    <img id="profilePic" src="default-avatar.png" class="profile-pic">
+    <div class="mini-edit" id="editBtn">✎</div>
   </div>
 
   <div id="previewName">Your Name</div>
+  <div id="previewAge">Age: --</div>
   <div id="previewBio">Your bio will appear here...</div>
 
   <input type="file" id="photoInput" accept="image/*" style="display:none;">
 
-  <div class="form-group"><input type="text" id="displayName" placeholder=" " required><label for="displayName">Full Name</label></div>
+  <div class="form-group"><input type="text" id="displayName" placeholder=" " readonly><label for="displayName">Full Name</label></div>
+  <div class="form-group"><input type="number" id="age" placeholder=" " readonly><label for="age">Age</label></div>
   <div class="form-group"><input type="email" id="email" placeholder=" " readonly><label for="email">Email</label></div>
-  <div class="form-group"><select id="gender" required><option value="" disabled selected hidden></option><option value="male">Male</option><option value="female">Female</option><option value="other">Other</option></select><label for="gender">Gender</label></div>
-  <div class="form-group"><textarea id="bio" placeholder=" " rows="3"></textarea><label for="bio">Bio</label></div>
+  <div class="form-group"><select id="gender" disabled><option value="" disabled selected hidden></option><option value="male">Male</option><option value="female">Female</option><option value="other">Other</option></select><label for="gender">Gender</label></div>
+  <div class="form-group"><textarea id="bio" placeholder=" " rows="3" readonly></textarea><label for="bio">Bio</label></div>
 
-  <button id="saveBtn">💾 Save Changes</button>
-  <button id="logoutBtn">🚪 Logout</button>
-
+  <button id="saveBtn">💾 Save</button>
   <p id="msg"></p>
 </div>
 
@@ -93,55 +72,90 @@ import { logout } from './auth.js';
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
 import { getUserProfile, updateUserProfile, uploadProfilePhoto } from './firestore.js';
 
-const displayNameInput = document.getElementById('displayName');
-const emailInput = document.getElementById('email');
-const genderInput = document.getElementById('gender');
-const bioInput = document.getElementById('bio');
-const profilePic = document.getElementById('profilePic');
-const photoInput = document.getElementById('photoInput');
-const msg = document.getElementById('msg');
-const saveBtn = document.getElementById('saveBtn');
-const editPhoto = document.getElementById('editPhoto');
-const darkModeToggle = document.getElementById('darkModeToggle');
-const previewName = document.getElementById('previewName');
-const previewBio = document.getElementById('previewBio');
+const displayNameInput=document.getElementById('displayName');
+const ageInput=document.getElementById('age');
+const emailInput=document.getElementById('email');
+const genderInput=document.getElementById('gender');
+const bioInput=document.getElementById('bio');
+const profilePic=document.getElementById('profilePic');
+const photoInput=document.getElementById('photoInput');
+const msg=document.getElementById('msg');
+const saveBtn=document.getElementById('saveBtn');
+const editBtn=document.getElementById('editBtn');
+const logoutBtn=document.getElementById('logoutBtn');
+const darkModeToggle=document.getElementById('darkModeToggle');
+const previewName=document.getElementById('previewName');
+const previewBio=document.getElementById('previewBio');
+const previewAge=document.getElementById('previewAge');
 
-let currentUid = null;
-let photoFile = null;
+let currentUid=null;
+let profileUid=null;
+let photoFile=null;
+let editMode=false;
 
-// Dark Mode
-if(localStorage.getItem('darkMode') === 'true') { document.body.classList.add('dark-mode'); darkModeToggle.textContent = '☀️ Light Mode'; }
-darkModeToggle.addEventListener('click', () => {
-  document.body.classList.toggle('dark-mode');
-  const isDark = document.body.classList.contains('dark-mode');
-  darkModeToggle.textContent = isDark ? '☀️ Light Mode' : '🌙 Dark Mode';
-  localStorage.setItem('darkMode', isDark);
+// Dark mode toggle
+if(localStorage.getItem('darkMode')==='true'){document.body.classList.add('dark-mode');darkModeToggle.textContent='☀️';}
+darkModeToggle.addEventListener('click',()=>{
+document.body.classList.toggle('dark-mode');
+const isDark=document.body.classList.contains('dark-mode');
+darkModeToggle.textContent=isDark?'☀️':'🌙';
+localStorage.setItem('darkMode',isDark);
 });
 
-// Profile photo
-editPhoto.addEventListener('click', () => photoInput.click());
-photoInput.addEventListener('change', (e) => {
-  photoFile = e.target.files[0];
-  if(photoFile){
-    const reader = new FileReader();
-    reader.onload = (ev) => { profilePic.src = ev.target.result; profilePic.style.transform = 'scale(1.15) rotate(-2deg)'; setTimeout(()=>profilePic.style.transform='scale(1) rotate(0deg)',300); };
-    reader.readAsDataURL(photoFile);
-  }
+// Edit toggle
+editBtn.addEventListener('click',()=>{
+editMode=!editMode;
+displayNameInput.readOnly=!editMode;
+bioInput.readOnly=!editMode;
+genderInput.disabled=!editMode;
+ageInput.readOnly=!editMode;
+saveBtn.style.display=editMode?'block':'none';
 });
 
 // Live preview
-displayNameInput.addEventListener('input', () => previewName.textContent = displayNameInput.value || 'Your Name');
-bioInput.addEventListener('input', () => previewBio.textContent = bioInput.value || 'Your bio will appear here...');
+displayNameInput.addEventListener('input',()=>previewName.textContent=displayNameInput.value||'Your Name');
+bioInput.addEventListener('input',()=>previewBio.textContent=bioInput.value||'Your bio will appear here...');
+ageInput.addEventListener('input',()=>previewAge.textContent='Age: '+(ageInput.value||'--'));
+profilePic.addEventListener('click',()=>{if(editMode)photoInput.click();});
+photoInput.addEventListener('change',e=>{photoFile=e.target.files[0];if(photoFile){const reader=new FileReader();reader.onload=ev=>{profilePic.src=ev.target.result;profilePic.style.transform='scale(1.15) rotate(-2deg)';setTimeout(()=>profilePic.style.transform='scale(1) rotate(0deg)',300)};reader.readAsDataURL(photoFile);}});
 
-// Load user data
-onAuthStateChanged(auth, async (user) => {
-  if(!user){ window.location.href = "login.html"; return; }
-  currentUid = user.uid;
-  emailInput.value = user.email;
-  try{
-    const profile = await getUserProfile(currentUid);
-    if(profile){
-      displayNameInput.value = profile.displayName || '';
-      bioInput.value = profile.bio || '';
-      genderInput.value = profile.gender || '';
-      previewName.text
+// Load profile
+onAuthStateChanged(auth,async user=>{
+if(!user){window.location.href='login.html';return;}
+currentUid=user.uid;
+
+// Assume profileUid is passed in query string or default to current user
+const urlParams=new URLSearchParams(window.location.search);
+profileUid=urlParams.get('uid')||currentUid;
+
+try{
+const profile=await getUserProfile(profileUid);
+if(profile){
+displayNameInput.value=profile.displayName||'';
+bioInput.value=profile.bio||'';
+genderInput.value=profile.gender||'';
+ageInput.value=profile.age||'';
+previewName.textContent=displayNameInput.value||'Your Name';
+previewBio.textContent=bioInput.value||'Your bio will appear here...';
+previewAge.textContent='Age: '+(ageInput.value||'--');
+if(profile.photoURL)profilePic.src=profile.photoURL;
+}
+// Show edit button only if viewing own profile
+if(currentUid!==profileUid){editBtn.style.display='none';saveBtn.style.display='none';}
+}catch(err){console.error(err);msg.textContent='Error loading profile';msg.classList.add('show');}
+});
+
+// Save changes
+saveBtn.addEventListener('click',async()=>{
+msg.textContent='';msg.classList.remove('show');
+const data={displayName:displayNameInput.value.trim(),bio:bioInput.value.trim(),gender:genderInput.value,age:ageInput.value};
+try{if(photoFile){const url=await uploadProfilePhoto(currentUid,photoFile);data.photoURL=url;}
+await updateUserProfile(currentUid,data);
+msg.textContent='✅ Profile updated!';msg.style.color='#22c55e';msg.classList.add('show');
+editMode=false;displayNameInput.readOnly=true;bioInput.readOnly=true;genderInput.disabled=true;ageInput.readOnly=true;saveBtn.style.display='none';}catch(err){console.error(err);msg.textContent='❌ Update failed';msg.style.color='#dc2626';msg.classList.add('show');}});
+
+// Logout
+logoutBtn.addEventListener('click',async()=>{await logout();window.location.href='login.html';});
+</script>
+</body>
+</html>
