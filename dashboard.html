@@ -1,210 +1,599 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>My Profile</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta charset="utf-8" />
+  <title>Profile + Global Chat (with Firebase Auth)</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
+    :root {
+      --primary: #007bff;
+      --primary-dark: #0056b3;
+      --muted: #f5f6fa;
+      --card-bg: #fff;
+      --radius: 12px;
+      --gap: 12px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    *{box-sizing:border-box}
     body {
-      font-family: sans-serif;
-      background: #f5f6fa;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      margin: 0;
       height: 100vh;
-      overflow: hidden;
-      animation: fadeInBody 1s ease forwards;
+      background: var(--muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      position: relative;
     }
 
-    @keyframes fadeInBody {
-      from { opacity: 0; transform: scale(0.95); }
-      to { opacity: 1; transform: scale(1); }
+    /* top-left dropdown */
+    .dropdown {
+      position: absolute;
+      top: 18px;
+      left: 18px;
+      z-index: 120;
+    }
+    .menu-btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 9px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+    }
+
+    .menu-content {
+      display: none;
+      position: absolute;
+      top: 46px;
+      left: 0;
+      width: 220px;
+      max-height: 240px;
+      overflow-y: auto;
+      background: var(--card-bg);
+      border-radius: 10px;
+      box-shadow: 0 10px 28px rgba(0,0,0,0.12);
+    }
+    .menu-content.show { display:block; animation:menuIn .2s ease; }
+    @keyframes menuIn { from {opacity:0; transform:translateY(-6px)} to{opacity:1; transform:translateY(0)}}
+    .menu-content button{
+      width:100%;
+      padding:10px;
+      text-align:left;
+      border:0;
+      background:transparent;
+      cursor:pointer;
+    }
+    .menu-content button:hover{ background:#f1f3f5; }
+
+    /* card + chat layout */
+    .wrap {
+      display: flex;
+      gap: 20px;
+      width: 100%;
+      max-width: 980px;
+      align-items: flex-start;
     }
 
     .card {
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-      padding: 20px;
-      width: 100%;
-      max-width: 400px;
-      text-align: center;
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 18px;
+      width: 360px;
+      box-shadow: 0 8px 30px rgba(15,15,15,0.06);
       position: relative;
-      transform: translateY(-50px);
-      opacity: 0;
-      animation: cardEntrance 0.8s ease forwards;
     }
 
-    @keyframes cardEntrance {
-      to { transform: translateY(0); opacity: 1; }
-    }
-
+    .card h2 { margin: 0 0 10px 0; font-size: 20px; }
     .profile-pic {
-      width: 100px;
-      height: 100px;
+      width: 96px;
+      height: 96px;
       border-radius: 50%;
       object-fit: cover;
-      border: 2px solid #ddd;
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      border: 2px solid #e6e9ef;
       cursor: pointer;
     }
-
-    .profile-pic:hover {
-      transform: scale(1.1);
-      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    .field {
+      margin-top: 10px;
     }
-
-    input, select, textarea {
-      width: 100%;
-      padding: 10px;
-      margin-top: 8px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    input[type="text"], input[type="email"], input[type="password"], textarea {
+      width:100%;
+      padding:10px;
+      border-radius:8px;
+      border:1px solid #d7dbe0;
     }
+    textarea { min-height: 70px; resize:vertical; }
 
-    input:focus, select:focus, textarea:focus {
-      border-color: #007bff;
-      box-shadow: 0 0 8px rgba(0,123,255,0.3);
-      outline: none;
-    }
-
-    button {
-      width: 100%;
-      padding: 10px;
-      margin-top: 12px;
+    .btn {
+      display:inline-block;
+      background: var(--primary);
+      color: white;
       border: none;
-      border-radius: 8px;
-      background: #007bff;
-      color: white;
+      padding: 10px 12px;
+      border-radius: 10px;
       cursor: pointer;
-      transition: transform 0.2s ease, background 0.3s ease;
+      margin-top: 12px;
     }
+    .btn.secondary { background: #6c757d; }
+    .danger { background:#d9534f; }
 
-    button:hover {
-      transform: translateY(-2px);
-      background: #0056b3;
-    }
+    .small { font-size: 13px; color:#6b6f76; margin-top:6px; }
 
-    button.danger:hover {
-      background: #b52a3a;
+    /* Chat box */
+    .chat {
+      flex: 1;
+      max-width: 560px;
+      min-width: 300px;
+      display:flex;
+      flex-direction:column;
+      gap: 12px;
     }
+    .chat-card{
+      background:var(--card-bg);
+      border-radius: var(--radius);
+      padding: 16px;
+      height: 74vh;
+      display:flex;
+      flex-direction:column;
+      box-shadow: 0 8px 30px rgba(15,15,15,0.06);
+    }
+    .messages {
+      flex:1;
+      overflow-y:auto;
+      padding:8px;
+      border-radius:8px;
+      background:#fbfdff;
+      border:1px solid #eef2f6;
+    }
+    .msg-row{
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      margin-bottom:10px;
+    }
+    .msg-thumb{ width:40px; height:40px; border-radius:50%; object-fit:cover; border:1px solid #e6e9ef; }
+    .msg-body { max-width: calc(100% - 56px); }
+    .msg-name { font-weight:600; font-size:13px; margin-bottom:4px; }
+    .msg-text { background:var(--primary); color:white; display:inline-block; padding:8px 10px; border-radius:10px; }
+    .chat-input { display:flex; gap:8px; margin-top:8px; }
+    .chat-input input{ flex:1; padding:10px; border-radius:8px; border:1px solid #d7dbe0; }
+    .note { font-size:12px; color:#8b9198; }
 
-    #msg {
-      margin-top: 8px;
-      font-size: 0.9em;
-      color: #28a745;
-      opacity: 0;
-      transition: opacity 0.5s ease;
-    }
+    /* auth area */
+    .auth-panel { margin-top: 12px; border-top:1px dashed #eef2f6; padding-top:12px; }
 
-    #msg.show {
-      opacity: 1;
-    }
-
-    #verifiedBadge {
-      display: none;
-      position: absolute;
-      top: 70px;
-      right: 20px;
-      background: #4caf50;
-      color: white;
-      padding: 4px 8px;
-      border-radius: 8px;
-      font-size: 0.8rem;
-      transform: scale(0);
-      animation: badgePop 0.5s forwards;
-    }
-
-    @keyframes badgePop {
-      to { transform: scale(1); }
-    }
-
-    /* Dark mode */
-    body.dark-mode {
-      background: #1e1e1e;
-      color: #f1f1f1;
-    }
-    body.dark-mode .card {
-      background: #2c2c2c;
-      color: #f1f1f1;
-    }
-    body.dark-mode input, body.dark-mode select, body.dark-mode textarea {
-      background: #3c3c3c;
-      color: #f1f1f1;
-      border: 1px solid #555;
+    /* responsive */
+    @media (max-width: 880px){
+      .wrap{ flex-direction:column; align-items:center; }
+      .chat-card{ width:100%; max-width:100%; height:60vh; }
     }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h2>My Profile</h2>
-    <img id="profilePic" src="default-avatar.png" alt="Profile Picture" class="profile-pic">
-    <input type="file" id="photoInput" accept="image/*">
+  <!-- dropdown -->
+  <div class="dropdown">
+    <button id="menuBtn" class="menu-btn">☰ Menu</button>
+    <div id="menuContent" class="menu-content" role="menu" aria-hidden="true">
+      <button id="openChatBtn">🌍 Global Chat</button>
+      <button id="openProfileBtn">👤 Profile</button>
+    </div>
+  </div>
 
-    <input type="text" id="displayName" placeholder="Your Name">
-    <input type="number" id="age" placeholder="Age">
-    <input type="email" id="email" placeholder="Email" readonly>
-    <select id="gender">
-      <option value="">Select Gender</option>
-      <option value="male">Male</option>
-      <option value="female">Female</option>
-      <option value="other">Other</option>
-    </select>
-    <textarea id="bio" placeholder="Write something about yourself..."></textarea>
+  <div class="wrap">
+    <!-- Profile card -->
+    <div class="card" id="profileCard">
+      <h2>My Profile</h2>
+      <div style="display:flex;gap:12px;align-items:center;">
+        <img id="profilePic" class="profile-pic" src="default-avatar.png" alt="profile photo">
+        <div style="flex:1">
+          <div id="signedInfo" style="display:none;">
+            <div style="font-weight:700" id="signedName"></div>
+            <div class="small" id="signedEmail"></div>
+          </div>
 
-    <button id="saveBtn">Save Changes</button>
-    <button id="logoutBtn" class="danger">Logout</button>
+          <div id="notSignedInfo">
+            <div class="small">You are not signed in</div>
+          </div>
+        </div>
+      </div>
 
-    <div id="verifiedBadge">✔ Verified</div>
-    <p id="msg"></p>
+      <div class="field">
+        <input id="displayName" type="text" placeholder="Display name (used in chat)"/>
+      </div>
+      <div class="field">
+        <input id="email" type="email" placeholder="Email address"/>
+      </div>
+      <div class="field">
+        <textarea id="bio" placeholder="Write something about yourself (optional)"></textarea>
+      </div>
+
+      <div style="display:flex;gap:8px;">
+        <label class="btn" style="cursor:pointer;">
+          Upload Photo
+          <input id="photoInput" type="file" accept="image/*" style="display:none">
+        </label>
+        <button id="saveProfile" class="btn secondary">Save Profile</button>
+      </div>
+
+      <div class="auth-panel" id="authPanel">
+        <!-- Auth forms -->
+        <div id="authForms">
+          <div style="display:flex;gap:8px;">
+            <input id="authEmail" type="email" placeholder="Email" />
+            <input id="authPassword" type="password" placeholder="Password" />
+          </div>
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <button id="loginBtn" class="btn">Login</button>
+            <button id="registerBtn" class="btn">Register</button>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <button id="googleBtn" class="btn secondary" style="display:none">Sign in with Google</button>
+            <button id="resetPwdBtn" class="btn secondary">Reset Password</button>
+          </div>
+          <div class="small note">After login, your saved profile (name/photo) will be used in chat.</div>
+        </div>
+
+        <!-- Signed view -->
+        <div id="signedActions" style="display:none;margin-top:10px;">
+          <button id="logoutBtn" class="btn danger">Logout</button>
+          <div class="small" style="margin-top:8px;">Signed in as <span id="whoami"></span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chat -->
+    <div class="chat">
+      <div class="chat-card" id="chatCard">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <h3 style="margin:0">🌍 Global Chat</h3>
+          <div class="note">Public room · Real-time</div>
+        </div>
+
+        <div class="messages" id="messages"></div>
+
+        <div class="chat-input">
+          <input id="messageInput" placeholder="Type a message (login required)"/>
+          <button id="sendBtn" class="btn">Send</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script type="module">
-    // Dummy JS for demonstration (replace with your Firebase logic)
-    const displayNameInput = document.getElementById('displayName');
-    const ageInput = document.getElementById('age');
-    const emailInput = document.getElementById('email');
-    const genderInput = document.getElementById('gender');
-    const bioInput = document.getElementById('bio');
+    // ---- FIREBASE SETUP ----
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+    import {
+      getAuth,
+      createUserWithEmailAndPassword,
+      signInWithEmailAndPassword,
+      onAuthStateChanged,
+      signOut,
+      sendPasswordResetEmail,
+      updateProfile
+    } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+
+    import {
+      getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, setDoc, getDoc
+    } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+
+    import {
+      getStorage, ref as storageRef, uploadBytes, getDownloadURL
+    } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-storage.js";
+
+    // Replace with your Firebase config (already set for your project)
+    const firebaseConfig = {
+      apiKey: "AIzaSyCS4-Oc9jeWaQGQMRYoIL_2y2O5nrKZ6gM",
+      authDomain: "fantasy-41fc9.firebaseapp.com",
+      projectId: "fantasy-41fc9",
+      storageBucket: "fantasy-41fc9.appspot.com",
+      messagingSenderId: "431557761003",
+      appId: "1:431557761003:web:375881a847d1d8b9506bae"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
+
+    // ---- UI ELEMENTS ----
+    const menuBtn = document.getElementById('menuBtn');
+    const menuContent = document.getElementById('menuContent');
+    const openChatBtn = document.getElementById('openChatBtn');
+    const openProfileBtn = document.getElementById('openProfileBtn');
+
+    const profileCard = document.getElementById('profileCard');
+    const chatCard = document.getElementById('chatCard');
+    const messagesDiv = document.getElementById('messages');
+    const sendBtn = document.getElementById('sendBtn');
+    const messageInput = document.getElementById('messageInput');
+
     const profilePic = document.getElementById('profilePic');
     const photoInput = document.getElementById('photoInput');
-    const msg = document.getElementById('msg');
-    const saveBtn = document.getElementById('saveBtn');
+    const displayNameInput = document.getElementById('displayName');
+    const emailInput = document.getElementById('email');
+    const bioInput = document.getElementById('bio');
+    const saveProfileBtn = document.getElementById('saveProfile');
+
+    const authEmail = document.getElementById('authEmail');
+    const authPassword = document.getElementById('authPassword');
+    const loginBtn = document.getElementById('loginBtn');
+    const registerBtn = document.getElementById('registerBtn');
     const logoutBtn = document.getElementById('logoutBtn');
-    const verifiedBadge = document.getElementById('verifiedBadge');
+    const resetPwdBtn = document.getElementById('resetPwdBtn');
+    const signedActions = document.getElementById('signedActions');
+    const authForms = document.getElementById('authForms');
+    const signedNameEl = document.getElementById('signedName');
+    const signedEmailEl = document.getElementById('signedEmail');
+    const notSignedInfo = document.getElementById('notSignedInfo');
+    const signedInfo = document.getElementById('signedInfo');
+    const whoami = document.getElementById('whoami');
 
-    let photoFile = null;
-
-    profilePic.addEventListener('click', () => photoInput.click());
-
-    photoInput.addEventListener('change', e => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        profilePic.src = reader.result;
-        verifiedBadge.style.display = 'flex';
-        showMessage('✅ Photo uploaded!');
-      };
-      reader.readAsDataURL(file);
-      photoFile = file;
+    // menu interactions
+    menuBtn.addEventListener('click', ()=> menuContent.classList.toggle('show'));
+    document.addEventListener('click', e => {
+      if (!menuContent.contains(e.target) && !menuBtn.contains(e.target)) menuContent.classList.remove('show');
     });
+    openChatBtn.addEventListener('click', ()=> { profileCard.style.display='none'; chatCard.style.display='block'; menuContent.classList.remove('show'); });
+    openProfileBtn.addEventListener('click', ()=> { chatCard.style.display='none'; profileCard.style.display='block'; menuContent.classList.remove('show'); });
 
-    saveBtn.addEventListener('click', () => {
-      showMessage('✅ Profile saved!');
-    });
+    // ---- AUTH / PROFILE FLOW ----
 
-    logoutBtn.addEventListener('click', () => {
-      showMessage('Logging out...');
-      setTimeout(() => alert('Logged out!'), 800);
-    });
-
-    function showMessage(text) {
-      msg.textContent = text;
-      msg.classList.add('show');
-      setTimeout(() => msg.classList.remove('show'), 3000);
+    // helper: upload image to Firebase Storage and return URL
+    async function uploadProfilePhoto(file, uid){
+      const path = `profiles/${uid}/${Date.now()}_${file.name}`;
+      const ref = storageRef(storage, path);
+      await uploadBytes(ref, file);
+      const url = await getDownloadURL(ref);
+      return url;
     }
+
+    // Save profile locally and to Firestore (if signed in)
+    saveProfileBtn.addEventListener('click', async () => {
+      const name = displayNameInput.value.trim() || "Anonymous";
+      const emailVal = emailInput.value.trim();
+      const bio = bioInput.value.trim();
+      // if user signed in, update Firestore user doc
+      const user = auth.currentUser;
+      let photoURL = profilePic.src;
+
+      if (user) {
+        // if profilePic is a data URL (uploaded), upload to storage and get URL
+        if (photoURL.startsWith('data:')) {
+          const blob = dataURLtoBlob(photoURL);
+          photoURL = await uploadProfilePhoto(blob, user.uid);
+        }
+
+        // set user profile in Firebase Auth and users collection
+        try {
+          // update Firebase Auth displayName/photoURL
+          await updateProfile(user, { displayName: name, photoURL });
+        } catch (err) {
+          // (non-fatal) some browsers may block updateProfile for certain accounts
+          console.warn('updateProfile error', err);
+        }
+
+        // persist in Firestore under "users/{uid}"
+        const userDocRef = doc(db, 'users', user.uid);
+        await setDoc(userDocRef, { name, email: emailVal || user.email || '', photoURL, bio }, { merge: true });
+        alert('Profile saved to your account ✅');
+      } else {
+        // Save to localStorage (for quick testing without signing in)
+        localStorage.setItem('localProfile', JSON.stringify({ name, email: emailVal, photo: profilePic.src, bio }));
+        alert('Profile saved locally. Sign in to persist to your Firebase account.');
+      }
+      renderAuthState(); // refresh UI labels
+    });
+
+    // convert dataURL to blob
+    function dataURLtoBlob(dataurl) {
+      const arr = dataurl.split(',');
+      const mimeMatch = arr[0].match(/:(.*?);/);
+      const mime = mimeMatch ? mimeMatch[1] : 'image/png';
+      const bstr = atob(arr[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+      while(n--) { u8arr[n] = bstr.charCodeAt(n); }
+      return new Blob([u8arr], { type: mime });
+    }
+
+    // photo upload locally preview (and mark as data URL)
+    photoInput.addEventListener('change', (e)=>{
+      const f = e.target.files?.[0];
+      if(!f) return;
+      const reader = new FileReader();
+      reader.onload = () => profilePic.src = reader.result;
+      reader.readAsDataURL(f);
+    });
+
+    profilePic.addEventListener('click', ()=> photoInput.click());
+
+    // ---- AUTH BUTTONS ----
+    registerBtn.addEventListener('click', async () => {
+      const email = authEmail.value.trim();
+      const pwd = authPassword.value;
+      if(!email || !pwd){ alert('Enter email & password'); return; }
+      try {
+        const cred = await createUserWithEmailAndPassword(auth, email, pwd);
+        // after create, set initial profile doc from local UI fields if available
+        const uid = cred.user.uid;
+        let photoURL = profilePic.src;
+        if (photoURL.startsWith('data:')) {
+          const blob = dataURLtoBlob(photoURL);
+          photoURL = await uploadProfilePhoto(blob, uid);
+        }
+        await setDoc(doc(db, 'users', uid), {
+          name: displayNameInput.value.trim() || 'Anonymous',
+          email,
+          photoURL,
+          bio: bioInput.value.trim() || ''
+        });
+        alert('Registered & signed in ✅');
+      } catch (err) {
+        console.error(err);
+        alert('Register failed: ' + (err.message || err));
+      }
+    });
+
+    loginBtn.addEventListener('click', async () => {
+      const email = authEmail.value.trim();
+      const pwd = authPassword.value;
+      if(!email || !pwd){ alert('Enter email & password'); return; }
+      try{
+        await signInWithEmailAndPassword(auth, email, pwd);
+        alert('Signed in ✅');
+      }catch(err){
+        console.error(err);
+        alert('Login failed: ' + (err.message || err));
+      }
+    });
+
+    logoutBtn.addEventListener('click', async ()=>{
+      await signOut(auth);
+      alert('Signed out ✅');
+    });
+
+    resetPwdBtn.addEventListener('click', async ()=>{
+      const email = authEmail.value.trim();
+      if(!email){ alert('Provide email to reset password'); return; }
+      try {
+        await sendPasswordResetEmail(auth, email);
+        alert('Reset link sent to email (check spam).');
+      } catch(err){
+        console.error(err);
+        alert('Reset failed: ' + (err.message || err));
+      }
+    });
+
+    // ---- AUTH STATE HANDLING ----
+    onAuthStateChanged(auth, async (user) => {
+      renderAuthState();
+      if (user) {
+        // load profile from Firestore (if exists) and populate UI
+        try {
+          const udoc = await getDoc(doc(db, 'users', user.uid));
+          if (udoc.exists()) {
+            const data = udoc.data();
+            displayNameInput.value = data.name || user.displayName || '';
+            emailInput.value = data.email || user.email || '';
+            bioInput.value = data.bio || '';
+            if (data.photoURL) profilePic.src = data.photoURL;
+          } else {
+            // fallback: use auth fields
+            displayNameInput.value = user.displayName || '';
+            emailInput.value = user.email || '';
+            if (user.photoURL) profilePic.src = user.photoURL;
+          }
+        } catch(err) {
+          console.warn('load user doc error', err);
+        }
+      } else {
+        // no user: try load localProfile to prefill
+        const lp = JSON.parse(localStorage.getItem('localProfile') || "{}");
+        if (lp.name) displayNameInput.value = lp.name;
+        if (lp.email) emailInput.value = lp.email;
+        if (lp.photo) profilePic.src = lp.photo;
+        if (lp.bio) bioInput.value = lp.bio;
+      }
+    });
+
+    // update UI elements when auth state changes
+    function renderAuthState(){
+      const u = auth.currentUser;
+      if(u){
+        signedInfo.style.display = 'block';
+        notSignedInfo.style.display = 'none';
+        signedNameEl.textContent = u.displayName || u.email;
+        signedEmailEl.textContent = u.email || '';
+        authForms.style.display = 'none';
+        signedActions.style.display = 'block';
+        whoami.textContent = u.email;
+      } else {
+        signedInfo.style.display = 'none';
+        notSignedInfo.style.display = 'block';
+        authForms.style.display = 'block';
+        signedActions.style.display = 'none';
+      }
+    }
+
+    // ---- CHAT LOGIC ----
+    // disable sending if not authenticated; UI check
+    sendBtn.addEventListener('click', sendMessage);
+    messageInput.addEventListener('keydown', (e) => { if(e.key==='Enter') sendMessage(); });
+
+    async function sendMessage(){
+      const text = messageInput.value.trim();
+      if(!text) return;
+      const user = auth.currentUser;
+      if(!user){
+        alert('You must sign in to send messages.');
+        return;
+      }
+      // get user's profile snapshot (prefer Firestore user doc)
+      let name = user.displayName || 'Anonymous';
+      let photoURL = user.photoURL || 'default-avatar.png';
+      try {
+        const udoc = await getDoc(doc(db, 'users', user.uid));
+        if(udoc.exists()){
+          const d = udoc.data();
+          if(d.name) name = d.name;
+          if(d.photoURL) photoURL = d.photoURL;
+        }
+      } catch(err){ console.warn('get user doc before send', err); }
+
+      try {
+        await addDoc(collection(db, 'globalChat'), {
+          uid: user.uid,
+          name,
+          photoURL,
+          text,
+          time: serverTimestamp()
+        });
+        messageInput.value = '';
+      } catch(err) {
+        console.error('send message error', err);
+        alert('Message send failed.');
+      }
+    }
+
+    // realtime listener for chat messages (ordered by time)
+    const q = query(collection(db, 'globalChat'), orderBy('time','asc'));
+    onSnapshot(q, (snap) => {
+      messagesDiv.innerHTML = ''; // simple redraw; could be optimized
+      snap.forEach(docSnap => {
+        const d = docSnap.data();
+        const row = document.createElement('div');
+        row.className = 'msg-row';
+        const img = document.createElement('img');
+        img.className = 'msg-thumb';
+        img.src = d.photoURL || 'default-avatar.png';
+        img.alt = d.name || 'user';
+        const body = document.createElement('div');
+        body.className = 'msg-body';
+        const nameEl = document.createElement('div');
+        nameEl.className = 'msg-name';
+        nameEl.textContent = d.name || 'Anonymous';
+        const textEl = document.createElement('div');
+        textEl.className = 'msg-text';
+        textEl.textContent = d.text || '';
+        body.appendChild(nameEl);
+        body.appendChild(textEl);
+        row.appendChild(img);
+        row.appendChild(body);
+        messagesDiv.appendChild(row);
+      });
+      // auto scroll
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    });
+
+    // helper: show profile from localStorage if any on load
+    (function prefillLocalProfile(){
+      const lp = JSON.parse(localStorage.getItem('localProfile') || "{}");
+      if(lp.name) displayNameInput.value = lp.name;
+      if(lp.email) emailInput.value = lp.email;
+      if(lp.photo) profilePic.src = lp.photo;
+      if(lp.bio) bioInput.value = lp.bio;
+    })();
   </script>
 </body>
-</html>
+  </html>
