@@ -2,31 +2,107 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Dashboard</title>
+  <title>My Profile</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f5f6fa;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      padding: 20px;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+    .profile-pic {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #ddd;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px;
+      margin-top: 8px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 12px;
+      border: none;
+      border-radius: 8px;
+      background: #007bff;
+      color: white;
+      cursor: pointer;
+    }
+    button.danger {
+      background: #dc3545;
+    }
+    #msg {
+      margin-top: 8px;
+      font-size: 0.9em;
+      color: #28a745;
+    }
+  </style>
 </head>
 <body>
   <div class="card">
-    <h2>Dashboard</h2>
-    <p id="userEmail">Loading...</p>
-    <input type="text" id="displayName" placeholder="Your name">
-    <button id="saveBtn">Save Profile</button>
+    <h2>My Profile</h2>
+    <img id="profilePic" src="default-avatar.png" alt="Profile Picture" class="profile-pic">
+    <input type="file" id="photoInput" accept="image/*">
+
+    <input type="text" id="displayName" placeholder="Your Name">
+    <input type="email" id="email" placeholder="Email" readonly>
+    <select id="gender">
+      <option value="">Select Gender</option>
+      <option value="male">Male</option>
+      <option value="female">Female</option>
+      <option value="other">Other</option>
+    </select>
+    <textarea id="bio" placeholder="Write something about yourself..."></textarea>
+
+    <button id="saveBtn">Save Changes</button>
     <button id="logoutBtn" class="danger">Logout</button>
-    <p id="msg" class="muted"></p>
+    <p id="msg"></p>
   </div>
 
   <script type="module">
     import { auth } from './firebase.js';
     import { logout } from './auth.js';
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
-    import { getUserProfile, updateUserProfile } from './firestore.js';
+    import { getUserProfile, updateUserProfile, uploadProfilePhoto } from './firestore.js';
 
-    const userEmail = document.getElementById('userEmail');
     const displayNameInput = document.getElementById('displayName');
+    const emailInput = document.getElementById('email');
+    const genderInput = document.getElementById('gender');
+    const bioInput = document.getElementById('bio');
+    const profilePic = document.getElementById('profilePic');
+    const photoInput = document.getElementById('photoInput');
     const msg = document.getElementById('msg');
 
     let currentUid = null;
+    let photoFile = null;
+
+    photoInput.addEventListener('change', (e) => {
+      photoFile = e.target.files[0];
+      if (photoFile) {
+        const reader = new FileReader();
+        reader.onload = (ev) => (profilePic.src = ev.target.result);
+        reader.readAsDataURL(photoFile);
+      }
+    });
 
     onAuthStateChanged(auth, async (user) => {
       if (!user) {
@@ -34,28 +110,41 @@
         return;
       }
       currentUid = user.uid;
-      userEmail.textContent = `Logged in as: ${user.email}`;
-      // load profile from firestore
+      emailInput.value = user.email;
+
       try {
         const profile = await getUserProfile(currentUid);
         if (profile) {
           displayNameInput.value = profile.displayName || '';
+          genderInput.value = profile.gender || '';
+          bioInput.value = profile.bio || '';
+          if (profile.photoURL) profilePic.src = profile.photoURL;
         }
-      } catch (e) {
-        console.error(e);
-        msg.textContent = 'Failed to load profile.';
+      } catch (err) {
+        console.error(err);
+        msg.textContent = 'Error loading profile.';
       }
     });
 
     document.getElementById('saveBtn').addEventListener('click', async () => {
       msg.textContent = '';
-      const name = displayNameInput.value.trim();
       if (!currentUid) return;
+
+      const data = {
+        displayName: displayNameInput.value.trim(),
+        gender: genderInput.value,
+        bio: bioInput.value.trim(),
+      };
+
       try {
-        await updateUserProfile(currentUid, { displayName: name });
-        msg.textContent = 'Profile updated.';
-      } catch (e) {
-        console.error(e);
+        if (photoFile) {
+          const url = await uploadProfilePhoto(currentUid, photoFile);
+          data.photoURL = url;
+        }
+        await updateUserProfile(currentUid, data);
+        msg.textContent = 'Profile updated successfully!';
+      } catch (err) {
+        console.error(err);
         msg.textContent = 'Update failed.';
       }
     });
