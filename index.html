@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Launcher</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="status">Checking connection...</div>
+  <script type="module">
+    import { auth } from './firebase.js';
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+    const status = document.getElementById('status');
+    function checkConnection() {
+      if (!navigator.onLine) {
+        status.textContent = "❌ Offline: Check your internet connection.";
+        return false;
+      }
+      return true;
+    }
+    if (checkConnection()) {
+      status.textContent = "Checking login state...";
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          status.textContent = "✅ Welcome back! Redirecting to dashboard...";
+          setTimeout(() => (window.location.href = "dashboard.html"), 1200);
+        } else {
+          status.textContent = "Redirecting to login...";
+          setTimeout(() => (window.location.href = "login.html"), 800);
+        }
+      });
+    }
+    window.addEventListener('online', checkConnection);
+    window.addEventListener('offline', checkConnection);
+  </script>
+</body>
+</html>

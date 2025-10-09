@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Login</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="card">
+    <h2>Login</h2>
+    <input type="email" id="email" placeholder="Email">
+    <input type="password" id="password" placeholder="Password">
+    <button id="loginBtn">Login</button>
+    <p>Don’t have an account? <a href="register.html">Register</a></p>
+    <p id="msg" class="muted"></p>
+  </div>
+
+  <script type="module">
+    import { login } from './auth.js';
+    import { auth } from './firebase.js';
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+
+    const msg = document.getElementById('msg');
+    onAuthStateChanged(auth, (user) => {
+      if (user) window.location.href = "dashboard.html";
+    });
+
+    document.getElementById('loginBtn').addEventListener('click', async () => {
+      msg.textContent = '';
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value.trim();
+      if (!email || !password) {
+        msg.textContent = 'Please enter email and password.';
+        return;
+      }
+      try {
+        await login(email, password);
+        msg.textContent = 'Login successful — redirecting...';
+        window.location.href = "dashboard.html";
+      } catch (error) {
+        msg.textContent = error.message;
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Register</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="card">
+    <h2>Create Account</h2>
+    <input type="email" id="email" placeholder="Email">
+    <input type="password" id="password" placeholder="Password (6+ chars)">
+    <input type="text" id="displayName" placeholder="Display name (optional)">
+    <button id="registerBtn">Register</button>
+    <p>Already have an account? <a href="login.html">Login</a></p>
+    <p id="msg" class="muted"></p>
+  </div>
+
+  <script type="module">
+    import { register } from './auth.js';
+    import { auth } from './firebase.js';
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+    import { createUserProfile } from './firestore.js';
+
+    const msg = document.getElementById('msg');
+    onAuthStateChanged(auth, (user) => {
+      if (user) window.location.href = "dashboard.html";
+    });
+
+    document.getElementById('registerBtn').addEventListener('click', async () => {
+      msg.textContent = '';
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value.trim();
+      const displayName = document.getElementById('displayName').value.trim();
+      if (!email || !password) {
+        msg.textContent = 'Please enter email and password.';
+        return;
+      }
+      try {
+        const cred = await register(email, password);
+        const uid = cred.user.uid;
+        // create user profile in Firestore
+        await createUserProfile(uid, email, displayName);
+        msg.textContent = 'Registration successful — redirecting...';
+        window.location.href = "dashboard.html";
+      } catch (error) {
+        msg.textContent = error.message;
+      }
+    });
+  </script>
+</body>
+</html>
