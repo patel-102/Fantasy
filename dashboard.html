@@ -1,158 +1,147 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>My Profile</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <link rel="stylesheet" href="style.css">
-  <style>
-    body {
-      font-family: sans-serif;
-      background: #f5f6fa;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
-    .card {
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-      padding: 20px;
-      width: 100%;
-      max-width: 400px;
-      text-align: center;
-    }
-    .profile-pic {
-      width: 100px;
-      height: 100px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 2px solid #ddd;
-    }
-    input, select, textarea {
-      width: 100%;
-      padding: 10px;
-      margin-top: 8px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-    }
-    button {
-      width: 100%;
-      padding: 10px;
-      margin-top: 12px;
-      border: none;
-      border-radius: 8px;
-      background: #007bff;
-      color: white;
-      cursor: pointer;
-    }
-    button.danger {
-      background: #dc3545;
-    }
-    #msg {
-      margin-top: 8px;
-      font-size: 0.9em;
-      color: #28a745;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>My Profile</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; transition: all 0.3s ease; }
+  body { font-family: 'Inter', sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; }
+  body.dark-mode { background: #1f2937; }
+
+  .card {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    width: 100%;
+    max-width: 400px;
+    padding: 30px 25px;
+    text-align: center;
+    position: relative;
+    animation: fadeIn 0.6s ease forwards;
+  }
+  body.dark-mode .card { background: #111827; color: #f3f4f6; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+  .card:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(0,0,0,0.15); }
+
+  h2 { font-weight: 600; font-size: 1.6rem; color: #111827; margin-bottom: 20px; }
+  body.dark-mode h2 { color: #f3f4f6; }
+
+  .profile-pic-wrapper { position: relative; width: 110px; height: 110px; margin: 0 auto 15px auto; }
+  .profile-pic { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 2px solid #4f46e5; transition: all 0.3s ease; }
+  .profile-pic-wrapper:hover .profile-pic { transform: scale(1.08) rotate(-2deg); }
+
+  .edit-icon { position: absolute; bottom: 0; right: 0; background: #4f46e5; border-radius: 50%; width: 30px; height: 30px; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.15); transition: all 0.3s ease; }
+  .edit-icon:hover { background: #6366f1; transform: scale(1.1); }
+  .edit-icon::before { content: "✎"; color: #fff; font-size: 14px; }
+
+  .form-group { position: relative; }
+  .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px 14px; margin: 10px 0; border-radius: 12px; border: 1px solid #d1d5db; font-size: 0.95rem; outline: none; background: #fff; color: #111827; transition: all 0.3s ease; }
+  body.dark-mode .form-group input, body.dark-mode .form-group select, body.dark-mode .form-group textarea { background: #1f2937; color: #f3f4f6; border-color: #374151; }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #4f46e5; box-shadow: 0 0 6px rgba(79,70,229,0.3); transform: scale(1.02); }
+  .form-group label { position: absolute; top: 12px; left: 14px; font-size: 0.85rem; color: #6b7280; pointer-events: none; transition: all 0.2s ease; background: transparent; padding: 0 4px; }
+  .form-group input:focus + label, .form-group input:not(:placeholder-shown) + label, .form-group select:focus + label, .form-group select:not([value=""]) + label, .form-group textarea:focus + label, .form-group textarea:not(:placeholder-shown) + label { top: -8px; left: 12px; font-size: 0.75rem; color: #4f46e5; background: #fff; }
+  body.dark-mode .form-group input:focus + label, body.dark-mode .form-group select:focus + label, body.dark-mode .form-group textarea:focus + label { background: #111827; color: #6366f1; }
+
+  button { width: 100%; padding: 12px; margin-top: 15px; border: none; border-radius: 12px; font-weight: 500; cursor: pointer; position: relative; overflow: hidden; transition: all 0.3s ease; }
+  #saveBtn { background: #4f46e5; color: #fff; } #saveBtn:hover { background: #6366f1; transform: translateY(-2px) scale(1.02); }
+  #logoutBtn { background: #ef4444; color: #fff; } #logoutBtn:hover { background: #f87171; transform: translateY(-2px) scale(1.02); }
+
+  #msg { margin-top: 12px; font-size: 0.9rem; opacity: 0; transform: translateY(10px); transition: all 0.5s ease; }
+  #msg.show { opacity: 1; transform: translateY(0); }
+
+  #darkModeToggle { position: absolute; top: 15px; right: 15px; background: #4f46e5; border: none; color: #fff; padding: 6px 10px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; }
+  #darkModeToggle:hover { background: #6366f1; }
+
+  /* Live preview */
+  #previewName { font-weight: 600; margin-top: 8px; font-size: 1.1rem; color: #111827; transition: all 0.3s ease; }
+  #previewBio { font-size: 0.9rem; color: #6b7280; transition: all 0.3s ease; margin-bottom: 12px; }
+  body.dark-mode #previewName { color: #f3f4f6; }
+  body.dark-mode #previewBio { color: #d1d5db; }
+</style>
 </head>
 <body>
-  <div class="card">
-    <h2>My Profile</h2>
+<div class="card">
+  <button id="darkModeToggle">🌙 Dark Mode</button>
+  <h2>My Profile</h2>
+
+  <div class="profile-pic-wrapper">
     <img id="profilePic" src="default-avatar.png" alt="Profile Picture" class="profile-pic">
-    <input type="file" id="photoInput" accept="image/*">
-
-    <input type="text" id="displayName" placeholder="Your Name">
-    <input type="email" id="email" placeholder="Email" readonly>
-    <select id="gender">
-      <option value="">Select Gender</option>
-      <option value="male">Male</option>
-      <option value="female">Female</option>
-      <option value="other">Other</option>
-    </select>
-    <textarea id="bio" placeholder="Write something about yourself..."></textarea>
-
-    <button id="saveBtn">Save Changes</button>
-    <button id="logoutBtn" class="danger">Logout</button>
-    <p id="msg"></p>
+    <div class="edit-icon" id="editPhoto"></div>
   </div>
 
-  <script type="module">
-    import { auth } from './firebase.js';
-    import { logout } from './auth.js';
-    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
-    import { getUserProfile, updateUserProfile, uploadProfilePhoto } from './firestore.js';
+  <div id="previewName">Your Name</div>
+  <div id="previewBio">Your bio will appear here...</div>
 
-    const displayNameInput = document.getElementById('displayName');
-    const emailInput = document.getElementById('email');
-    const genderInput = document.getElementById('gender');
-    const bioInput = document.getElementById('bio');
-    const profilePic = document.getElementById('profilePic');
-    const photoInput = document.getElementById('photoInput');
-    const msg = document.getElementById('msg');
+  <input type="file" id="photoInput" accept="image/*" style="display:none;">
 
-    let currentUid = null;
-    let photoFile = null;
+  <div class="form-group"><input type="text" id="displayName" placeholder=" " required><label for="displayName">Full Name</label></div>
+  <div class="form-group"><input type="email" id="email" placeholder=" " readonly><label for="email">Email</label></div>
+  <div class="form-group"><select id="gender" required><option value="" disabled selected hidden></option><option value="male">Male</option><option value="female">Female</option><option value="other">Other</option></select><label for="gender">Gender</label></div>
+  <div class="form-group"><textarea id="bio" placeholder=" " rows="3"></textarea><label for="bio">Bio</label></div>
 
-    photoInput.addEventListener('change', (e) => {
-      photoFile = e.target.files[0];
-      if (photoFile) {
-        const reader = new FileReader();
-        reader.onload = (ev) => (profilePic.src = ev.target.result);
-        reader.readAsDataURL(photoFile);
-      }
-    });
+  <button id="saveBtn">💾 Save Changes</button>
+  <button id="logoutBtn">🚪 Logout</button>
 
-    onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        window.location.href = "login.html";
-        return;
-      }
-      currentUid = user.uid;
-      emailInput.value = user.email;
+  <p id="msg"></p>
+</div>
 
-      try {
-        const profile = await getUserProfile(currentUid);
-        if (profile) {
-          displayNameInput.value = profile.displayName || '';
-          genderInput.value = profile.gender || '';
-          bioInput.value = profile.bio || '';
-          if (profile.photoURL) profilePic.src = profile.photoURL;
-        }
-      } catch (err) {
-        console.error(err);
-        msg.textContent = 'Error loading profile.';
-      }
-    });
+<script type="module">
+import { auth } from './firebase.js';
+import { logout } from './auth.js';
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+import { getUserProfile, updateUserProfile, uploadProfilePhoto } from './firestore.js';
 
-    document.getElementById('saveBtn').addEventListener('click', async () => {
-      msg.textContent = '';
-      if (!currentUid) return;
+const displayNameInput = document.getElementById('displayName');
+const emailInput = document.getElementById('email');
+const genderInput = document.getElementById('gender');
+const bioInput = document.getElementById('bio');
+const profilePic = document.getElementById('profilePic');
+const photoInput = document.getElementById('photoInput');
+const msg = document.getElementById('msg');
+const saveBtn = document.getElementById('saveBtn');
+const editPhoto = document.getElementById('editPhoto');
+const darkModeToggle = document.getElementById('darkModeToggle');
+const previewName = document.getElementById('previewName');
+const previewBio = document.getElementById('previewBio');
 
-      const data = {
-        displayName: displayNameInput.value.trim(),
-        gender: genderInput.value,
-        bio: bioInput.value.trim(),
-      };
+let currentUid = null;
+let photoFile = null;
 
-      try {
-        if (photoFile) {
-          const url = await uploadProfilePhoto(currentUid, photoFile);
-          data.photoURL = url;
-        }
-        await updateUserProfile(currentUid, data);
-        msg.textContent = 'Profile updated successfully!';
-      } catch (err) {
-        console.error(err);
-        msg.textContent = 'Update failed.';
-      }
-    });
+// Dark Mode
+if(localStorage.getItem('darkMode') === 'true') { document.body.classList.add('dark-mode'); darkModeToggle.textContent = '☀️ Light Mode'; }
+darkModeToggle.addEventListener('click', () => {
+  document.body.classList.toggle('dark-mode');
+  const isDark = document.body.classList.contains('dark-mode');
+  darkModeToggle.textContent = isDark ? '☀️ Light Mode' : '🌙 Dark Mode';
+  localStorage.setItem('darkMode', isDark);
+});
 
-    document.getElementById('logoutBtn').addEventListener('click', async () => {
-      await logout();
-      window.location.href = "login.html";
-    });
-  </script>
-</body>
-</html>
+// Profile photo
+editPhoto.addEventListener('click', () => photoInput.click());
+photoInput.addEventListener('change', (e) => {
+  photoFile = e.target.files[0];
+  if(photoFile){
+    const reader = new FileReader();
+    reader.onload = (ev) => { profilePic.src = ev.target.result; profilePic.style.transform = 'scale(1.15) rotate(-2deg)'; setTimeout(()=>profilePic.style.transform='scale(1) rotate(0deg)',300); };
+    reader.readAsDataURL(photoFile);
+  }
+});
+
+// Live preview
+displayNameInput.addEventListener('input', () => previewName.textContent = displayNameInput.value || 'Your Name');
+bioInput.addEventListener('input', () => previewBio.textContent = bioInput.value || 'Your bio will appear here...');
+
+// Load user data
+onAuthStateChanged(auth, async (user) => {
+  if(!user){ window.location.href = "login.html"; return; }
+  currentUid = user.uid;
+  emailInput.value = user.email;
+  try{
+    const profile = await getUserProfile(currentUid);
+    if(profile){
+      displayNameInput.value = profile.displayName || '';
+      bioInput.value = profile.bio || '';
+      genderInput.value = profile.gender || '';
+      previewName.text
