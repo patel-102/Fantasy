@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>User Dashboard</title>
+  <style>
+    body{ font-family: 'Poppins', sans-serif; background: linear-gradient(180deg,#eef6ff,#ffffff); display:flex; align-items:center; justify-content:center; height:100vh; margin:0;}
+    .card{ background:white; padding:28px; border-radius:12px; box-shadow:0 12px 30px rgba(18,22,70,0.06); width:520px; text-align:center;}
+    button{ background:linear-gradient(90deg,#06b6d4,#7c3aed); color:#041124; border:none; padding:10px 18px; border-radius:8px; cursor:pointer;}
+    .small{ color:#666; font-size:14px; margin-top:6px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Welcome, User</h2>
+    <div id="info">Checking session...</div>
+    <div class="small">This is the normal user dashboard.</div>
+    <div style="margin-top:16px;">
+      <button id="logout">Logout</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { auth } from './firebase.js';
+    import { onAuthStateChanged, signOut, getIdTokenResult } from 'https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js';
+    const info = document.getElementById('info');
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        alert('Not logged in — redirecting to login.');
+        window.location.href = 'index.html';
+        return;
+      }
+      try {
+        const t = await getIdTokenResult(user, true);
+        if (t.claims && t.claims.admin === true) {
+          // redirect admin users to admin dashboard
+          window.location.href = 'dashboard_admin.html';
+          return;
+        }
+        info.innerHTML = '<strong>' + user.email + '</strong><div class="small">You are logged in as a normal user.</div>';
+      } catch (e) {
+        info.innerHTML = '<strong>' + user.email + '</strong><div class="small">You are logged in (could not verify claims).</div>';
+      }
+    });
+
+    document.getElementById('logout').addEventListener('click', async () => {
+      await signOut(auth);
+      window.location.href = 'index.html';
+    });
+  </script>
+</body>
+</html>
