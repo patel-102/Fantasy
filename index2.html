@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Auth — Admin & User (Firebase)</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container" id="container">
+  <div class="brand">
+    <div class="logo">F</div>
+    <h1>Flex — Auth </h1>
+  </div>
+
+  <div class="forms">
+    <!-- LOGIN -->
+    <div class="form" id="loginPanel">
+      <h2>Welcome </h2>
+      <div class="hint">Sign in to continue</div>
+      <input id="loginEmail" type="email" placeholder="Email" required />
+      <input id="loginPassword" type="password" placeholder="Password" required />
+      <button id="loginBtn">Login</button>
+      <div class="msg" id="loginMsg"></div>
+      <div class="toggle" id="toRegister">Don't have an account? <span class="link-like">Register</span></div>
+    </div>
+
+    <!-- REGISTER -->
+    <div class="form" id="registerPanel">
+      <h2>Create Account</h2>
+      <div class="hint">Register as a normal user</div>
+      <input id="registerEmail" type="email" placeholder="Email" required />
+      <input id="registerPassword" type="password" placeholder="Password (6+ chars)" required />
+      <button id="registerBtn">Register</button>
+      <div class="msg" id="registerMsg"></div>
+      <div class="toggle" id="toLogin">Already have an account? <span class="link-like">Login</span></div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { auth } from './firebase.js';
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  getIdTokenResult
+} from 'https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js';
+
+// Admin list (single admin email fallback)
+const allowedAdmins = ['prabhatverma673@gmail.com'];
+
+// UI refs
+const container = document.getElementById('container');
+const toRegister = document.getElementById('toRegister');
+const toLogin = document.getElementById('toLogin');
+const loginBtn = document.getElementById('loginBtn');
+const registerBtn = document.getElementById('registerBtn');
+const loginMsg = document.getElementById('loginMsg');
+const registerMsg = document.getElementById('registerMsg');
+
+toRegister.addEventListener('click', () => container.classList.add('register-mode'));
+toLogin.addEventListener('click', () => container.classList.remove('register-mode'));
+
+// Register new user (normal user)
+registerBtn.addEventListener('click', async () => {
+  const email = document.getElementById('registerEmail').value.trim();
+  const password = document.getElementById('registerPassword').value;
+  registerMsg.textContent = '';
+  try {
+    if (!email || !password) throw new Error('Please fill all fields.');
+    const userCred = await createUserWithEmailAndPassword(auth, email, password);
+    registerMsg.style.color = 'lightgreen';
+    registerMsg.textContent = 'Account created — redirecting...';
+    // Wait for token to propagate if necessary, then check claims
+    const idTokenResult = await getIdTokenResult(userCred.user, /* forceRefresh */ true);
+    if (idTokenResult.claims && idTokenResult.claims.admin === true) {
+      setTimeout(() => window.location.href = 'dashboard_admin.html', 800);
+    } else {
+      setTimeout(() => window.location.href = 'dashboard_user.html', 800);
+    }
+  } catch (err) {
+    registerMsg.style.color = 'crimson';
+    registerMsg.textContent = err.message;
+  }
+});
+
+// Login handler
+loginBtn.addEventListener('click', async () => {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  loginMsg.textContent = '';
+  try {
+    if (!email || !password) throw new Error('Please fill all fields.');
+    const userCred = await signInWithEmailAndPassword(auth, email, password);
+    // Check custom claims on token (preferred)
+    const idTokenResult = await getIdTokenResult(userCred.user, /* forceRefresh */ true);
+    const isAdmin = idTokenResult.claims && idTokenResult.claims.admin === true;
+    loginMsg.style.color = 'lightgreen';
+    loginMsg.textContent = 'Login successful — redirecting...';
+    if (isAdmin || allowedAdmins.includes(userCred.user.email)) {
+      setTimeout(() => window.location.href = 'dashboard_admin.html', 600);
+    } else {
+      setTimeout(() => window.location.href = 'dashboard_user.html', 600);
+    }
+  } catch (err) {
+    loginMsg.style.color = 'crimson';
+    loginMsg.textContent = err.message;
+  }
+});
+
+// If user already logged in, automatically redirect based on role (claims)
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    try {
+      const idTokenResult = await getIdTokenResult(user, true);
+      const isAdmin = idTokenResult.claims && idTokenResult.claims.admin === true;
+      if (isAdmin || allowedAdmins.includes(user.email)) {
+        window.location.href = 'dashboard_admin.html';
+      } else {
+        window.location.href = 'dashboard_user.html';
+      }
+    } catch (e) {
+      // fallback
+      if (allowedAdmins.includes(user.email)) window.location.href = 'dashboard_admin.html';
+      else window.location.href = 'dashboard_user.html';
+    }
+  }
+});
+</script>
+
+</body>
+</html>
