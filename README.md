@@ -1,26 +1,38 @@
-# Firebase Web App (Auth + Firestore)
+Admin + User Auth Project with Custom Claims (Firebase)
+------------------------------------------------------
+What I added:
+- A polished UI (dark theme) with animated login/register slide.
+- Client checks for Firebase custom claim 'admin' in ID token using getIdTokenResult.
+- A Node script (set_admin_claims.js) that uses firebase-admin SDK to set the admin claim.
+  This script requires a service account JSON (download from Firebase Console).
 
-This project is a simple Firebase web app with:
-- Email/password Authentication
-- Firestore-based user profiles
-- Launcher screen (connection check)
-- Login, Register, Dashboard pages
-- Deployable to GitHub Pages
+Quick setup steps:
+1) Enable Email/Password sign-in: Firebase Console -> Authentication -> Sign-in method -> Enable Email/Password.
+2) (Optional) Create the admin user via Console -> Authentication -> Users -> Add user
+   Email: prabhatverma673@gmail.com
+   Password: your-chosen-password
+3) To mark an existing user as admin (recommended, secure):
+   - Go to Project Settings -> Service accounts -> Generate new private key, save as serviceAccountKey.json
+   - Place serviceAccountKey.json in the same folder as set_admin_claims.js
+   - Install Node deps: `npm install firebase-admin`
+   - Run the script: `node set_admin_claims.js prabhatverma673@gmail.com true`
+   - The script revokes refresh tokens so the user must re-login to pick up new claims.
+4) If you don't want to use custom claims, the client still falls back to checking the admin email in the allowedAdmins array.
 
-## Setup
-1. Enable **Email/Password** under Firebase Console → Authentication → Sign-in method.
-2. Create **Firestore** (start in test mode for development).
-3. Update `firebaseConfig` in `firebase.js` if using another project.
-4. Deploy to GitHub Pages (push repository and enable Pages in settings).
+Files:
+- firebase.js
+- index.html (login/register UI)
+- style.css (theme + animations)
+- dashboard_admin.html (checks custom claim 'admin')
+- dashboard_user.html (normal user dashboard)
+- set_admin_claims.js (Node script to set admin claim)
+- README.txt (this file)
 
-## Firestore security rules (recommended)
-```
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-  }
-}
-```
+Deploying to Firebase Hosting:
+- Install firebase-tools (`npm install -g firebase-tools`) and login (`firebase login`).
+- Initialize hosting and point to this folder (`firebase init hosting`).
+- `firebase deploy --only hosting`
+
+Security note:
+- Do NOT rely solely on client-side checks for protecting sensitive actions/data.
+- Use Firebase Security Rules (Firestore/Storage) and server-side verification for critical operations.
