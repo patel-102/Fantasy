@@ -1,166 +1,135 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Launcher</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: "Poppins", sans-serif;
-    }
-
-    body {
-      height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: linear-gradient(135deg, #0f172a, #1e3a8a, #2563eb);
-      background-size: 300% 300%;
-      animation: gradientMove 10s ease infinite;
-      color: white;
-      overflow: hidden;
-    }
-
-    @keyframes gradientMove {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
-
-    .card {
-      background: rgba(255, 255, 255, 0.08);
-      border-radius: 16px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      padding: 50px 40px;
-      text-align: center;
-      box-shadow: 0 0 30px rgba(0, 200, 255, 0.4);
-      animation: glowPulse 2.5s ease-in-out infinite;
-      backdrop-filter: blur(14px);
-    }
-
-    @keyframes glowPulse {
-      0%, 100% {
-        box-shadow: 0 0 15px rgba(0, 200, 255, 0.5);
-      }
-      50% {
-        box-shadow: 0 0 40px rgba(0, 200, 255, 0.9);
-      }
-    }
-
-    .logo {
-      width: 100px;
-      height: 100px;
-      border-radius: 50%;
-      margin-bottom: 20px;
-      border: 3px solid rgba(255, 255, 255, 0.3);
-      box-shadow: 0 0 20px rgba(0, 200, 255, 0.6);
-      animation: spin 6s linear infinite, pulse 2s ease-in-out infinite;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    @keyframes pulse {
-      0%, 100% {
-        box-shadow: 0 0 15px rgba(0, 200, 255, 0.5);
-      }
-      50% {
-        box-shadow: 0 0 30px rgba(0, 200, 255, 1);
-      }
-    }
-
-    .glow-text {
-      font-weight: 600;
-      font-size: 1.5rem;
-      color: #00e0ff;
-      text-shadow: 0 0 15px #00e0ff, 0 0 30px #00e0ff;
-      animation: textGlow 2s ease-in-out infinite;
-    }
-
-    @keyframes textGlow {
-      0%, 100% {
-        text-shadow: 0 0 10px #00e0ff, 0 0 20px #00e0ff;
-      }
-      50% {
-        text-shadow: 0 0 30px #00e0ff, 0 0 50px #00e0ff;
-      }
-    }
-
-    #status {
-      font-size: 1rem;
-      margin-top: 12px;
-      color: #cbd5e1;
-      letter-spacing: 0.5px;
-    }
-
-    .loading-dots::after {
-      content: "";
-      animation: dots 1.5s steps(3, end) infinite;
-    }
-
-    @keyframes dots {
-      0%, 20% { content: ""; }
-      40% { content: "."; }
-      60% { content: ".."; }
-      80%, 100% { content: "..."; }
-    }
-  </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Auth — Admin & User (Firebase)</title>
+  <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-  <div class="card">
-    <!-- 🔹 Add your own logo image here -->
-    <img src="logo.png" alt="App Logo" class="logo">
-    <div class="glow-text">Launching App</div>
-    <div id="status" class="loading-dots">Checking connection</div>
+
+<div class="container" id="container">
+  <div class="brand">
+    <div class="logo">F</div>
+    <h1>Flex — Auth </h1>
   </div>
 
-  <script type="module">
-    import { auth } from './firebase.js';
-    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+  <div class="forms">
+    <!-- LOGIN -->
+    <div class="form" id="loginPanel">
+      <h2>Welcome </h2>
+      <div class="hint">Sign in to continue</div>
+      <input id="loginEmail" type="email" placeholder="Email" required />
+      <input id="loginPassword" type="password" placeholder="Password" required />
+      <button id="loginBtn">Login</button>
+      <div class="msg" id="loginMsg"></div>
+      <div class="toggle" id="toRegister">Don't have an account? <span class="link-like">Register</span></div>
+    </div>
 
-    const status = document.getElementById('status');
+    <!-- REGISTER -->
+    <div class="form" id="registerPanel">
+      <h2>Create Account</h2>
+      <div class="hint">Register as a normal user</div>
+      <input id="registerEmail" type="email" placeholder="Email" required />
+      <input id="registerPassword" type="password" placeholder="Password (6+ chars)" required />
+      <button id="registerBtn">Register</button>
+      <div class="msg" id="registerMsg"></div>
+      <div class="toggle" id="toLogin">Already have an account? <span class="link-like">Login</span></div>
+    </div>
+  </div>
+</div>
 
-    function setStatus(message, color = "#cbd5e1") {
-      status.textContent = message;
-      status.style.color = color;
+<script type="module">
+import { auth } from './firebase.js';
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  getIdTokenResult
+} from 'https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js';
+
+// Admin list (single admin email fallback)
+const allowedAdmins = ['prabhatverma673@gmail.com'];
+
+// UI refs
+const container = document.getElementById('container');
+const toRegister = document.getElementById('toRegister');
+const toLogin = document.getElementById('toLogin');
+const loginBtn = document.getElementById('loginBtn');
+const registerBtn = document.getElementById('registerBtn');
+const loginMsg = document.getElementById('loginMsg');
+const registerMsg = document.getElementById('registerMsg');
+
+toRegister.addEventListener('click', () => container.classList.add('register-mode'));
+toLogin.addEventListener('click', () => container.classList.remove('register-mode'));
+
+// Register new user (normal user)
+registerBtn.addEventListener('click', async () => {
+  const email = document.getElementById('registerEmail').value.trim();
+  const password = document.getElementById('registerPassword').value;
+  registerMsg.textContent = '';
+  try {
+    if (!email || !password) throw new Error('Please fill all fields.');
+    const userCred = await createUserWithEmailAndPassword(auth, email, password);
+    registerMsg.style.color = 'lightgreen';
+    registerMsg.textContent = 'Account created — redirecting...';
+    // Wait for token to propagate if necessary, then check claims
+    const idTokenResult = await getIdTokenResult(userCred.user, /* forceRefresh */ true);
+    if (idTokenResult.claims && idTokenResult.claims.admin === true) {
+      setTimeout(() => window.location.href = 'dashboard_admin.html', 800);
+    } else {
+      setTimeout(() => window.location.href = 'dashboard_user.html', 800);
     }
+  } catch (err) {
+    registerMsg.style.color = 'crimson';
+    registerMsg.textContent = err.message;
+  }
+});
 
-    function checkConnection() {
-      if (!navigator.onLine) {
-        setStatus("❌ Offline: Check your internet connection.", "#ff4d4d");
-        return false;
+// Login handler
+loginBtn.addEventListener('click', async () => {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  loginMsg.textContent = '';
+  try {
+    if (!email || !password) throw new Error('Please fill all fields.');
+    const userCred = await signInWithEmailAndPassword(auth, email, password);
+    // Check custom claims on token (preferred)
+    const idTokenResult = await getIdTokenResult(userCred.user, /* forceRefresh */ true);
+    const isAdmin = idTokenResult.claims && idTokenResult.claims.admin === true;
+    loginMsg.style.color = 'lightgreen';
+    loginMsg.textContent = 'Login successful — redirecting...';
+    if (isAdmin || allowedAdmins.includes(userCred.user.email)) {
+      setTimeout(() => window.location.href = 'dashboard_admin.html', 600);
+    } else {
+      setTimeout(() => window.location.href = 'dashboard_user.html', 600);
+    }
+  } catch (err) {
+    loginMsg.style.color = 'crimson';
+    loginMsg.textContent = err.message;
+  }
+});
+
+// If user already logged in, automatically redirect based on role (claims)
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    try {
+      const idTokenResult = await getIdTokenResult(user, true);
+      const isAdmin = idTokenResult.claims && idTokenResult.claims.admin === true;
+      if (isAdmin || allowedAdmins.includes(user.email)) {
+        window.location.href = 'dashboard_admin.html';
+      } else {
+        window.location.href = 'dashboard_user.html';
       }
-      return true;
+    } catch (e) {
+      // fallback
+      if (allowedAdmins.includes(user.email)) window.location.href = 'dashboard_admin.html';
+      else window.location.href = 'dashboard_user.html';
     }
+  }
+});
+</script>
 
-    if (checkConnection()) {
-      setStatus("Checking login state...");
-      onAuthStateChanged(auth, (user) => {
-        if (user) {
-          setStatus("✅ Welcome back! Redirecting to dashboard...", "#4ade80");
-          setTimeout(() => window.location.href = "dashboard.html", 1500);
-        } else {
-          setStatus("➡️ Redirecting to login...", "#60a5fa");
-          setTimeout(() => window.location.href = "login.html", 1500);
-        }
-      });
-    }
-
-    window.addEventListener('online', () =>
-      setStatus("✅ Back Online!", "#4ade80")
-    );
-    window.addEventListener('offline', () =>
-      setStatus("❌ Offline: Check your internet connection.", "#ff4d4d")
-    );
-  </script>
 </body>
-</html></body>
 </html>
