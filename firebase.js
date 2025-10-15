@@ -7,13 +7,15 @@ const firebaseConfig = {
   apiKey: "AIzaSyAQLK28ZvU2L09u1OIHlBlrGZZ7TPXEF8g",
   authDomain: "futurex-9a2e9.firebaseapp.com",
   projectId: "futurex-9a2e9",
-  storageBucket: "futurex-9a2e9.firebasestorage.app",
+  storageBucket: "futurex-9a2e9.appspot.com",
   messagingSenderId: "82126141815",
   appId: "1:82126141815:web:20fcd85f32feac7553c972"
 };
 
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
+// Export services
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
