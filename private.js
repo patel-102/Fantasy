@@ -1,25 +1,24 @@
+<script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
 
-// Import Firebase SDK modules
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
-import { getStorage } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-storage.js";
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyCo6Sz7bIhdYPFKxpy---q8_s0m__GN3_E",
+    authDomain: "system-2-2c3c4.firebaseapp.com",
+    databaseURL: "https://system-2-2c3c4-default-rtdb.firebaseio.com",
+    projectId: "system-2-2c3c4",
+    storageBucket: "system-2-2c3c4.firebasestorage.app",
+    messagingSenderId: "308422442069",
+    appId: "1:308422442069:web:eed6c628239ffed3dd68dc",
+    measurementId: "G-6EP3E503HX"
+  };
 
-// Your Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyAcM6iATwM70jFkYXRb6bT7KXLGZrgai6E",
-  authDomain: "futurex2-a8030.firebaseapp.com",
-  projectId: "futurex2-a8030",
-  storageBucket: "futurex2-a8030.firebasestorage.app",
-  messagingSenderId: "772713861227",
-  appId: "1:772713861227:web:ab4cde62c1cc33121a212e"
-};
-
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-
-// Export initialized Firebase services
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-export const storage = getStorage(app);
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+</script>
