@@ -4,9 +4,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js";
 // ===============================
 // 🔐 Your Supabase Public Config
 // ===============================
-const SUPABASE_URL = "https://chqtivbtyixwtsqwezqb.supabase.co";
-const SUPABASE_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNocXRpdmJ0eWl4d3RzcXdlenFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUxODUwMzQsImV4cCI6MjA4MDc2MTAzNH0.D0f49ElnV894qvnQDPWlSC81g6r3sZ1zJ4DaFhhUyzw";
+const SUPABASE_URL = "https://czqlzbimlypiaveacped.supabase.co";
+const SUPABASE_ANON_KEY ="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN6cWx6YmltbHlwaWF2ZWFjcGVkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyMDY1MDAsImV4cCI6MjA4MDc4MjUwMH0.k-Vp_NL9pQBk1PuZMpdDB54FaWAhEPatGFb3GRhinYU";
 
 // ===============================
 // 🚀 Create Supabase Client
