@@ -1,24 +1,38 @@
-// === Supabase Public Config (SAFE TO HOST) ===
+// Load Supabase from CDN
+import { createClient } from "https://esm.sh/@supabase/supabase-js";
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-// Your Supabase Project URL
+// ===============================
+// 🔐 Your Supabase Public Config
+// ===============================
 const SUPABASE_URL = "https://chqtivbtyixwtsqwezqb.supabase.co";
-
-// Your Public Anon Key (safe to expose)
 const SUPABASE_ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNocXRpdmJ0eWl4d3RzcXdlenFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUxODUwMzQsImV4cCI6MjA4MDc2MTAzNH0.D0f49ElnV894qvnQDPWlSC81g6r3sZ1zJ4DaFhhUyzw";
 
-// Create the Supabase Client
+// ===============================
+// 🚀 Create Supabase Client
+// ===============================
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// === Optional Quick Helpers (You can use or delete) ===
+// ===============================
+// 📦 Storage Helper Functions
+// ===============================
 
-// Auth helper
-export const auth = supabase.auth;
+// Upload file to a bucket
+export async function uploadFile(bucket, path, file) {
+  return await supabase.storage.from(bucket).upload(path, file, { upsert: true });
+}
 
-// Storage helper
-export const storage = supabase.storage;
+// Get public URL of a file
+export function getPublicUrl(bucket, path) {
+  return supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl;
+}
 
-// Database helper
-export const db = supabase.from.bind(supabase);
+// Delete file
+export async function deleteFile(bucket, path) {
+  return await supabase.storage.from(bucket).remove([path]);
+}
+
+// List files in folder
+export async function listFiles(bucket, folder) {
+  return await supabase.storage.from(bucket).list(folder);
+}
