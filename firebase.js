@@ -1,23 +1,24 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
-import { getStorage } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-storage.js";
-import { getDatabase } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
+// === Supabase Public Config (SAFE TO HOST) ===
 
-// Your Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyA3A3UMK41OJa8nB_ZfCDzuuOBnV8GEw44",
-  authDomain: "future-7cd4d.firebaseapp.com",
-  projectId: "future-7cd4d",
-  storageBucket: "future-7cd4d.firebasestorage.app",
-  messagingSenderId: "134358915216",
-  appId: "1:134358915216:web:72c425a3fac47d5e60a015"
-};
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// Export initialized Firebase services
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-export const storage = getStorage(app);
-export const rtdb = getDatabase(app);   // <<--- REALTIME DATABASE
+// Your Supabase Project URL
+const SUPABASE_URL = "https://chqtivbtyixwtsqwezqb.supabase.co";
+
+// Your Public Anon Key (safe to expose)
+const SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNocXRpdmJ0eWl4d3RzcXdlenFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUxODUwMzQsImV4cCI6MjA4MDc2MTAzNH0.D0f49ElnV894qvnQDPWlSC81g6r3sZ1zJ4DaFhhUyzw";
+
+// Create the Supabase Client
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// === Optional Quick Helpers (You can use or delete) ===
+
+// Auth helper
+export const auth = supabase.auth;
+
+// Storage helper
+export const storage = supabase.storage;
+
+// Database helper
+export const db = supabase.from.bind(supabase);
