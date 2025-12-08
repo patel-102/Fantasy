@@ -6,15 +6,13 @@ import { getDatabase } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-
 
 // Your Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyC-_Fz9GQ5zqj5p_mLLIyQpsq4gyhG_FqI",
-  authDomain: "futurex-1e0ae.firebaseapp.com",
-  databaseURL: "https://futurex-1e0ae-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "futurex-1e0ae",
-  storageBucket: "futurex-1e0ae.firebasestorage.app",
-  messagingSenderId: "872630439870",
-  appId: "1:872630439870:web:3c7e98b9157ffa684733ef"
+  apiKey: "AIzaSyA3A3UMK41OJa8nB_ZfCDzuuOBnV8GEw44",
+  authDomain: "future-7cd4d.firebaseapp.com",
+  projectId: "future-7cd4d",
+  storageBucket: "future-7cd4d.firebasestorage.app",
+  messagingSenderId: "134358915216",
+  appId: "1:134358915216:web:72c425a3fac47d5e60a015"
 };
-
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
