@@ -1,60 +1,29 @@
-// =========================================================
-// ⭐ Firebase Imports (Unified)
-// =========================================================
+// Import Firebase SDK (v9 modular)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
-import {
-  getDatabase,
-  ref,
-  set,
-} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
-import { // Added Firestore imports
-  getFirestore,
-  doc,
-  setDoc,
-  getDoc,
-  updateDoc,
-  collection,
-  addDoc,
-  query,
-  where,
-  getDocs
-} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+import { getDatabase } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
+import { getStorage } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-storage.js";
 
-
-// =========================================================
-// ⭐ Firebase Configuration (Unified)
-// =========================================================
+// Your actual Firebase Config
 const firebaseConfig = {
-  apiKey: "AIzaSyC-_Fz9GQ5zqj5p_mLLIyQpsq4gyhG_FqI",
+  apiKey: "AIzaSyC-_Fz9GQ5zqj5p_mLLIyQpsq4gyh_G_FqI",
   authDomain: "futurex-1e0ae.firebaseapp.com",
   databaseURL: "https://futurex-1e0ae-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "futurex-1e0ae",
-  storageBucket: "futurex-1e0ae.appspot.com", // Used the correct storageBucket
+  storageBucket: "futurex-1e0ae.appspot.com",
   messagingSenderId: "872630439870",
   appId: "1:872630439870:web:3c7e98b9157ffa684733ef"
 };
 
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
 
-// =========================================================
-// ⭐ Initialize Firebase App and Export Services (Unified)
-// =========================================================
-const firebaseApp = initializeApp(firebaseConfig);
-export const firebaseAuth = getAuth(firebaseApp);
-export const firebaseDB = getDatabase(firebaseApp);
-export const firebaseFS = getFirestore(firebaseApp); // Firestore service
+// Initialize Services
+const auth = getAuth(app);
+const db = getFirestore(app);
+const rtdb = getDatabase(app);
+const storage = getStorage(app);
 
-// Export helper functions
-export { 
-  ref, 
-  set, 
-  doc, 
-  setDoc, 
-  getDoc, 
-  updateDoc, 
-  collection, 
-  addDoc, 
-  query, 
-  where, 
-  getDocs 
-};
+// Export services
+export { auth, db, rtdb, storage };
