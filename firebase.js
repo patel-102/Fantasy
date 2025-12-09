@@ -32,14 +32,13 @@ const firebaseConfig = {
   authDomain: "futurex-1e0ae.firebaseapp.com",
   databaseURL: "https://futurex-1e0ae-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "futurex-1e0ae",
-  storageBucket: "futurex-1e0ae.appspot.com",
   messagingSenderId: "872630439870",
   appId: "1:872630439870:web:3c7e98b9157ffa684733ef"
 };
 
 
 // =========================================================
-// ⭐ Supabase Configuration
+// ⭐ Supabase Config
 // =========================================================
 const SUPABASE_URL = "https://ghxjxziiuxvutevkelet.supabase.co";
 const SUPABASE_ANON_KEY =
@@ -56,16 +55,23 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 
 // =========================================================
-// ⭐ Export Services
+// ⭐ Export Firebase Services
 // =========================================================
 export const firebaseAuth = getAuth(firebaseApp);
 export const firebaseDB = getDatabase(firebaseApp);
 export const firebaseFS = getFirestore(firebaseApp);
 
+
+// =========================================================
+// ⭐ Export Supabase Services
+// =========================================================
 export const supabaseClient = supabase;
 export const supabaseStorage = supabase.storage;
 
-// Firebase helper exports
+
+// =========================================================
+// ⭐ Re-export Firebase helpers
+// =========================================================
 export {
   ref,
   set,
