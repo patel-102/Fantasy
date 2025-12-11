@@ -9,8 +9,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js";
 // NOTE: Ensure these keys are correct for your project. 
 // For production, these should ideally be loaded from a secure environment 
 // variable or configuration, not hardcoded.
-const SUPABASE_URL = "https://ghxjxziiuxvutevkelet.supabase.co";
-const SUPABASE_ANON_KEY ="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdoeGp4emlpdXh2dXRldmtlbGV0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyMzY0MjAsImV4cCI6MjA4MDgxMjQyMH0.93O4ROK8G84wYuqfGUrmCxvcA3LvcIRwDoL4SVJv7eE";
+const SUPABASE_URL = "https://cxfehquttwdntntwhony.supabase.co";
+const SUPABASE_ANON_KEY ="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN4ZmVocXV0dHdkbnRudHdob255Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU0NTE1NzUsImV4cCI6MjA4MTAyNzU3NX0.pSCZc6OJ302CK93xOrW-_Ettd61RZ_ZM4WWvIaEs2Qg";
 const bucketName = "Future";
 
 // =========================================================
