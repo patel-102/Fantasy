@@ -1,4 +1,3 @@
-
 /* =========================================================
    🟣 SUPABASE IMPORT
    ========================================================= */
@@ -8,56 +7,78 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
    🟣 SUPABASE CONFIG
    ========================================================= */
 const SUPABASE_URL = "https://mlnpuxwceqvhldpypeep.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1sbnB1eHdjZXF2aGxkcHlwZWVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU2MDQ4NzMsImV4cCI6MjA4MTE4MDg3M30.mECAhFkUBHsyh7plEgGKTGgAkgHbht7jRnZgFON-zPc";
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1sbnB1eHdjZXF2aGxkcHlwZWVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU2MDQ4NzMsImV4cCI6MjA4MTE4MDg3M30.mECAhFkUBHsyh7plEgGKTGgAkgHbht7jRnZgFON-zPc";
 
-const bucketName = "Future"; // must match exactly
+export const supabase = createClient(
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY
+);
 
 /* =========================================================
-   🚀 SUPABASE UPLOAD – 100% WORKING, CORS SAFE
+   🟣 STORAGE BUCKET (CASE-SENSITIVE)
    ========================================================= */
-export async function uploadWithProgress(path, file, onProgress) {
-  try {
+const BUCKET_NAME = "Future";
+
+/* =========================================================
+   🚀 UPLOAD WITH REAL PROGRESS (CORS SAFE)
+   ========================================================= */
+export function uploadWithProgress(path, file, onProgress) {
+  return new Promise((resolve, reject) => {
+    if (!file || !path) {
+      reject("File or path missing");
+      return;
+    }
+
     const xhr = new XMLHttpRequest();
 
-    // Correct upload URL for Supabase Storage
-    const uploadUrl = `${SUPABASE_URL}/storage/v1/object/${bucketName}/${path}`;
+    const uploadUrl =
+      `${SUPABASE_URL}/storage/v1/object/${BUCKET_NAME}/${path}`;
 
-    xhr.open("POST", uploadUrl);
+    /* ---------- OPEN REQUEST ---------- */
+    xhr.open("PUT", uploadUrl, true);
 
-    // Required headers
-    xhr.setRequestHeader("Content-Type", file.type);
-    xhr.setRequestHeader("Apikey", SUPABASE_ANON_KEY);
+    /* ---------- REQUIRED HEADERS ---------- */
+    xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+    xhr.setRequestHeader("apikey", SUPABASE_ANON_KEY);
     xhr.setRequestHeader("Authorization", `Bearer ${SUPABASE_ANON_KEY}`);
     xhr.setRequestHeader("x-upsert", "true");
 
-    // Progress
+    /* ---------- PROGRESS ---------- */
     xhr.upload.onprogress = (event) => {
-      if (event.lengthComputable && onProgress) {
-        const pct = Math.round((event.loaded / event.total) * 100);
-        onProgress(pct);
-        console.log("📤 Supabase Progress:", pct + "%");
+      if (event.lengthComputable && typeof onProgress === "function") {
+        const percent = Math.round(
+          (event.loaded / event.total) * 100
+        );
+        onProgress(percent);
       }
     };
 
-    // Upload handler
-    return await new Promise((resolve, reject) => {
-      xhr.onload = () => {
-        if (xhr.status === 200 || xhr.status === 201) {
-          console.log("🎉 Supabase Upload Complete");
-          resolve({ success: true, path });
-        } else {
-          console.error("❌ Upload failed:", xhr.responseText);
-          reject("Upload failed with status " + xhr.status);
-        }
-      };
+    /* ---------- SUCCESS / ERROR ---------- */
+    xhr.onload = () => {
+      if (xhr.status === 200 || xhr.status === 201) {
+        resolve({
+          success: true,
+          path,
+          bucket: BUCKET_NAME,
+        });
+      } else {
+        reject({
+          success: false,
+          status: xhr.status,
+          response: xhr.responseText,
+        });
+      }
+    };
 
-      xhr.onerror = () => reject("❌ XHR upload failed.");
-      xhr.send(file);
-    });
+    xhr.onerror = () => {
+      reject({
+        success: false,
+        error: "Network error",
+      });
+    };
 
-  } catch (err) {
-    console.error("❌ Supabase Upload Error:", err);
-    return { success: false, error: err.message };
-  }
+    /* ---------- SEND FILE ---------- */
+    xhr.send(file);
+  });
 }
