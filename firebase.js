@@ -1,17 +1,18 @@
 // Import Firebase SDK (v9 modular)
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
-import { getDatabase } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+import { getDatabase } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-database.js";
 
-// Your actual Firebase Config
 const firebaseConfig = {
-  apiKey: "AIzaSyA3A3UMK41OJa8nB_ZfCDzuuOBnV8GEw44",
-  authDomain: "future-7cd4d.firebaseapp.com",
-  projectId: "future-7cd4d",
-  messagingSenderId: "134358915216",
-  appId: "1:134358915216:web:72c425a3fac47d5e60a015"
-};
+    apiKey: "AIzaSyAgauezxBjk7w6hf_gNvv0O2xGBB7yNdTk",
+    authDomain: "myshop-4a2f3.firebaseapp.com",
+    projectId: "myshop-4a2f3",
+    storageBucket: "myshop-4a2f3.firebasestorage.app",
+    messagingSenderId: "732248120499",
+    appId: "1:732248120499:web:73809ec93ba0f530b1a4c6"
+  };
+
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
