@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saved Items | Micro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background-color: #000; color: white; font-family: 'Inter', sans-serif; }
+        
+        /* 🟦 Micro Header */
+        header { 
+            background-color: #2874f0; 
+            padding: 0 15px; 
+            display: flex; 
+            align-items: center; 
+            height: 40px; 
+            position: fixed; 
+            top: 0; 
+            width: 100%; 
+            z-index: 100; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        /* 📦 Saved Card Design */
+        .fav-card { 
+            background: #0d0d0d; 
+            border: 1px solid #1a1a1a; 
+            border-radius: 1rem; 
+            display: flex; 
+            align-items: center; 
+            padding: 10px; 
+            gap: 12px; 
+            animation: slideIn 0.3s ease forwards;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .img-container { width: 60px; height: 60px; flex-shrink: 0; border-radius: 12px; overflow: hidden; background: #111; }
+        
+        /* Custom scrollbar for clean look */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #2874f0; border-radius: 10px; }
+    </style>
+</head>
+<body class="pt-14 p-4 pb-20">
+
+    <header>
+        <button onclick="location.href='myshop.html'" class="text-white mr-4">
+            <i class="fas fa-arrow-left text-sm"></i>
+        </button>
+        <h1 class="font-black text-[11px] uppercase italic tracking-tighter">My Saved Favourites</h1>
+    </header>
+
+    <div id="cart-list" class="space-y-3 max-w-md mx-auto">
+        <div class="flex flex-col items-center justify-center mt-20 text-zinc-700">
+            <i class="fas fa-circle-notch fa-spin text-2xl mb-2"></i>
+            <span class="text-[10px] font-bold uppercase tracking-widest">Loading Favourites...</span>
+        </div>
+    </div>
+
+    <script type="module">
+        import { auth, db } from 'https://patel-102.github.io/Fantasy/firebase.js';
+        import { collection, onSnapshot, doc, deleteDoc, query, orderBy } from 'https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js';
+        import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js';
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) { 
+                loadSavedItems(user.uid); 
+            } else { 
+                window.location.href = "login.html"; 
+            }
+        });
+
+        function loadSavedItems(uid) {
+            // Path: users -> {uid} -> cart
+            const cartRef = collection(db, "users", uid, "cart");
+            const q = query(cartRef, orderBy("savedAt", "desc"));
+
+            onSnapshot(q, (snap) => {
+                const list = document.getElementById('cart-list');
+                list.innerHTML = "";
+
+                if (snap.empty) {
+                    list.innerHTML = `
+                        <div class="flex flex-col items-center justify-center mt-32 opacity-30">
+                            <i class="fa-regular fa-heart text-5xl mb-4"></i>
+                            <p class="text-[10px] font-black uppercase tracking-[0.2em]">No Saved Items Yet</p>
+                            <button onclick="location.href='myshop.html'" class="mt-4 text-[#2874f0] text-[9px] font-bold underline">GO SHOPPING</button>
+                        </div>`;
+                    return;
+                }
+
+                snap.forEach(itemDoc => {
+                    const item = itemDoc.data();
+                    const card = document.createElement('div');
+                    card.className = "fav-card";
+                    card.innerHTML = `
+                        <div class="img-container">
+                            <img src="${item.product_url || 'https://via.placeholder.com/100'}" class="w-full h-full object-cover">
+                        </div>
+                        <div class="flex-grow">
+                            <h3 class="text-[10px] font-black uppercase italic leading-tight text-zinc-200">${item.name}</h3>
+                            <p class="text-blue-500 font-black text-xs mt-1">${item.price}</p>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <button onclick="location.href='product_details.html?id=${itemDoc.id}'" class="p-2 text-zinc-500 active:text-white transition">
+                                <i class="fas fa-external-link-alt text-xs"></i>
+                            </button>
+                            <button onclick="removeItem('${itemDoc.id}')" class="p-2 text-zinc-800 active:text-red-500 transition">
+                                <i class="fas fa-trash-alt text-xs"></i>
+                            </button>
+                        </div>
+                    `;
+                    list.appendChild(card);
+                });
+            });
+        }
+
+        // Global function to remove item
+        window.removeItem = async (productId) => {
+            if(confirm("Remove this item from your saved list?")) {
+                try {
+                    const user = auth.currentUser;
+                    await deleteDoc(doc(db, "users", user.uid, "cart", productId));
+                } catch (e) {
+                    alert("Error removing item");
+                }
+            }
+        }
+    </script>
+</body>
+</html>

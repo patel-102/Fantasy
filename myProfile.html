@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Settings</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --success: #10b981;
+        }
+
+        body { background-color: var(--bg); font-family: 'Inter', sans-serif; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        
+        /* Profile Card */
+        .profile-card { width: 100%; max-width: 650px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.04); overflow: hidden; margin: 20px; position: relative; }
+        .profile-header { padding: 40px 20px; text-align: center; background: linear-gradient(to bottom, #f1f5f9 0%, #ffffff 100%); border-bottom: 1px solid var(--border); }
+        .avatar-container { position: relative; width: 110px; height: 110px; margin: 0 auto 15px; cursor: pointer; }
+        .avatar-circle { width: 100%; height: 100%; border-radius: 50%; border: 4px solid #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.1); background-size: cover; background-position: center; background-color: #e2e8f0; transition: 0.2s; }
+        .avatar-container:hover .avatar-circle { transform: scale(1.05); }
+
+        .header-name { font-size: 1.7rem; font-weight: 700; margin: 0; letter-spacing: -0.025em; }
+        .meta-tags { display: flex; justify-content: center; gap: 10px; align-items: center; margin-top: 10px; }
+        .role-badge { padding: 4px 12px; border-radius: 100px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
+        .join-date { font-size: 0.8rem; color: var(--text-muted); font-weight: 500; }
+
+        /* Grid Layout */
+        .content { padding: 40px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        .full { grid-column: span 2; }
+        .field label { display: block; font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; }
+        .val { font-size: 0.95rem; padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-weight: 500; color: var(--text-main); min-height: 20px; }
+        .locked { color: var(--text-muted); border-bottom: none; }
+
+        input, textarea { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; display: none; box-sizing: border-box; font-family: inherit; font-size: 0.95rem; }
+        
+        /* Edit Mode Toggles */
+        .edit-mode input, .edit-mode textarea { display: block; }
+        .edit-mode .val:not(.locked) { display: none; }
+        .edit-mode .locked { opacity: 0.6; }
+
+        .actions { padding: 24px 40px; background: #f8fafc; display: flex; justify-content: flex-end; gap: 12px; }
+        .btn { padding: 10px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; border: none; font-size: 0.85rem; transition: 0.2s; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-main { background: var(--primary); color: white; }
+        .btn-outline { background: white; border: 1px solid var(--border); color: var(--text-main); }
+        .btn-cancel { background: #fee2e2; color: #dc2626; }
+
+        /* Toast & Modal */
+        #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--success); color: white; padding: 12px 24px; border-radius: 12px; font-weight: 600; box-shadow: 0 10px 15px rgba(0,0,0,0.1); transition: 0.3s; z-index: 2000; }
+        #toast.show { transform: translateX(-50%) translateY(0); }
+        
+        #avatarModal { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: white; width: 90%; max-width: 350px; border-radius: 20px; padding: 24px; text-align: center; }
+        .modal-btn { width: 100%; padding: 12px; margin-top: 10px; border-radius: 10px; border: 1px solid var(--border); font-weight: 600; cursor: pointer; }
+    </style>
+</head>
+<body class="view-mode">
+
+<div id="toast">✅ Profile updated successfully!</div>
+
+<div class="profile-card" id="card">
+    <div class="profile-header">
+        <div class="avatar-container" onclick="openAvatarModal()">
+            <div class="avatar-circle" id="avatarImg"></div>
+        </div>
+        <h1 class="header-name" id="disp_header_name">User Profile</h1>
+        <div class="meta-tags">
+            <div class="role-badge" id="disp_role">Role</div>
+            <span class="join-date" id="disp_join">Member since ...</span>
+        </div>
+    </div>
+
+    <div class="content">
+        <input type="hidden" id="input_image_url">
+        <div class="grid">
+            <div class="field"><label>Username (Locked)</label><div class="val locked" id="v_username">@username</div></div>
+            <div class="field"><label>Email Address (Locked)</label><div class="val locked" id="v_email">email@example.com</div></div>
+            
+            <div class="field"><label>Full Name</label><div class="val" id="v_name">—</div><input type="text" id="i_name"></div>
+            <div class="field"><label>Phone Number</label><div class="val" id="v_phone">—</div><input type="tel" id="i_phone"></div>
+            
+            <div class="field"><label>Age</label><div class="val" id="v_age">—</div><input type="number" id="i_age"></div>
+            <div class="field"><label>Gender</label><div class="val" id="v_gender">—</div><input type="text" id="i_gender"></div>
+            
+            <div class="field"><label>Country</label><div class="val" id="v_country">—</div><input type="text" id="i_country"></div>
+            <div class="field"><label>State</label><div class="val" id="v_state">—</div><input type="text" id="i_state"></div>
+            
+            <div class="field full"><label>Street Address</label><div class="val" id="v_address">—</div><input type="text" id="i_address"></div>
+            <div class="field full"><label>Professional Bio</label><div class="val" id="v_bio">...</div><textarea id="i_bio" rows="3"></textarea></div>
+        </div>
+    </div>
+
+    <div class="actions">
+        <button class="btn btn-outline" id="btnEdit" onclick="setEdit(true)">Edit Profile</button>
+        <button class="btn btn-cancel" id="btnCancel" style="display:none" onclick="cancelEdit()">Cancel</button>
+        <button class="btn btn-main" id="btnSave" style="display:none" onclick="saveData()">Save Changes</button>
+    </div>
+</div>
+
+<div id="avatarModal">
+    <div class="modal-content">
+        <h3 style="margin-top:0">Update Avatar</h3>
+        <button class="modal-btn btn-main" style="background:var(--primary); color:white; border:none;" onclick="suggestAvatar()">Generate Random</button>
+        <button class="modal-btn" onclick="closeAvatarModal()">Close</button>
+    </div>
+</div>
+
+<script type="module">
+    import { auth, db } from 'https://patel-102.github.io/Fantasy/firebase.js';
+    import { doc, getDoc, updateDoc } from 'https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js';
+    import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js';
+
+    let uid = null;
+    let localData = null; // Store data for cancel functionality
+
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            uid = user.uid;
+            fetchAndRender();
+        } else { window.location.href = "index.html"; }
+    });
+
+    async function fetchAndRender() {
+        const snap = await getDoc(doc(db, "users", uid));
+        if (snap.exists()) {
+            localData = snap.data();
+            render(localData);
+        }
+    }
+
+    function render(data) {
+        document.getElementById('disp_header_name').textContent = data.name || "User Profile";
+        document.getElementById('v_username').textContent = "@" + (data.email ? data.email.split('@')[0] : "user");
+        document.getElementById('v_email').textContent = data.email || "—";
+        
+        const role = data.role || "user";
+        const rEl = document.getElementById('disp_role');
+        rEl.textContent = role === "admin" ? "Dungeon Master" : "Villager";
+        rEl.style.background = role === "admin" ? "#fef2f2" : "#e0e7ff";
+        rEl.style.color = role === "admin" ? "#991b1b" : "#4338ca";
+
+        if (data.createdAt) {
+            const d = data.createdAt.toDate();
+            document.getElementById('disp_join').textContent = `Member since ${d.toLocaleDateString(undefined, {year:'numeric', month:'long'})}`;
+        }
+
+        const avatar = data.image_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${uid}`;
+        document.getElementById('avatarImg').style.backgroundImage = `url('${avatar}')`;
+        document.getElementById('input_image_url').value = avatar;
+
+        const fields = ['name', 'phone', 'age', 'gender', 'address', 'state', 'country', 'bio'];
+        fields.forEach(f => {
+            document.getElementById(`v_${f}`).textContent = data[f] || "—";
+            document.getElementById(`i_${f}`).value = data[f] || "";
+        });
+    }
+
+    window.openAvatarModal = () => { if(document.body.classList.contains('edit-mode')) document.getElementById('avatarModal').style.display = 'flex'; };
+    window.closeAvatarModal = () => document.getElementById('avatarModal').style.display = 'none';
+
+    window.suggestAvatar = () => {
+        const url = `https://api.dicebear.com/7.x/open-peeps/svg?seed=${Math.random()}`;
+        document.getElementById('avatarImg').style.backgroundImage = `url('${url}')`;
+        document.getElementById('input_image_url').value = url;
+        closeAvatarModal();
+    };
+
+    window.setEdit = (e) => {
+        document.body.className = e ? 'edit-mode' : 'view-mode';
+        document.getElementById('btnEdit').style.display = e ? 'none' : 'block';
+        document.getElementById('btnSave').style.display = e ? 'block' : 'none';
+        document.getElementById('btnCancel').style.display = e ? 'block' : 'none';
+    };
+
+    window.cancelEdit = () => {
+        render(localData); // Revert UI to original data
+        setEdit(false);
+    };
+
+    window.saveData = async () => {
+        const btn = document.getElementById('btnSave');
+        btn.disabled = true;
+        btn.textContent = "Saving...";
+
+        const payload = {
+            image_url: document.getElementById('input_image_url').value,
+            name: document.getElementById('i_name').value,
+            phone: document.getElementById('i_phone').value,
+            age: document.getElementById('i_age').value,
+            gender: document.getElementById('i_gender').value,
+            address: document.getElementById('i_address').value,
+            state: document.getElementById('i_state').value,
+            country: document.getElementById('i_country').value,
+            bio: document.getElementById('i_bio').value,
+        };
+
+        try {
+            await updateDoc(doc(db, "users", uid), payload);
+            localData = { ...localData, ...payload };
+            render(localData);
+            setEdit(false);
+            showToast();
+        } catch (err) {
+            alert("Error: " + err.message);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = "Save Changes";
+        }
+    };
+
+    function showToast() {
+        const t = document.getElementById('toast');
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 3000);
+    }
+</script>
+</body>
+</html>

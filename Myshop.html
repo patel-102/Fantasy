@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Store | Micro Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --nav-blue: #3b82f6;
+            --bg-dark: #000000;
+            --card-dark: #111111;
+            --text-main: #ffffff;
+            --border: #222;
+        }
+
+        body {
+            background-color: var(--bg-dark); color: var(--text-main);
+            font-family: 'Inter', sans-serif; margin: 0;
+            display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+        }
+
+        /* 🌀 Main Percentage Loader */
+        #page-loader {
+            position: fixed; inset: 0; background: var(--bg-dark);
+            display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999;
+        }
+        .spinner-box { position: relative; display: flex; justify-content: center; align-items: center; }
+        .spinner { width: 55px; height: 55px; border: 3px solid #1a1a1a; border-top: 3px solid var(--nav-blue); border-radius: 50%; animation: spin 1s linear infinite; }
+        #load-percent { position: absolute; font-size: 0.7rem; font-weight: 800; color: var(--nav-blue); }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* ⚡ Category Transition Loader */
+        #category-loader {
+            position: absolute; inset: 0; background: rgba(0,0,0,0.7);
+            display: none; justify-content: center; align-items: center; z-index: 500; backdrop-filter: blur(2px);
+        }
+
+        /* 🟦 Header & Dropdown */
+        header { 
+            background-color: var(--nav-blue); padding: 5px 12px; 
+            display: flex; justify-content: space-between; align-items: center; height: 38px; z-index: 1001;
+        }
+        .header-left { display: flex; align-items: center; gap: 8px; position: relative; }
+        .store-title { font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+        .icon-btn { color: white; background: none; border: none; font-size: 1rem; cursor: pointer; padding: 4px; }
+
+        .dropdown-menu {
+            display: none; position: absolute; top: 38px; left: -10px;
+            background: #0f0f0f; width: 180px; border: 1px solid var(--border);
+            border-radius: 0 0 12px 12px; z-index: 2000; box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+        .dropdown-menu.show { display: block; }
+        
+        .drop-user-info {
+            padding: 15px; background: #161616; border-bottom: 1px solid var(--border);
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .drop-avatar {
+            width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--nav-blue);
+            background-size: cover; background-position: center; margin-bottom: 8px; background-color: #222;
+        }
+        .drop-name { font-size: 0.75rem; font-weight: 700; color: white; text-align: center; }
+        
+        .drop-link {
+            display: flex; align-items: center; gap: 10px; padding: 12px 15px;
+            color: #ccc; text-decoration: none; font-size: 0.7rem; border-bottom: 1px solid #1a1a1a;
+        }
+        .drop-link i { color: var(--nav-blue); width: 14px; }
+        .drop-link:last-child { color: #ef4444; border-bottom: none; }
+
+        /* 🔍 Search */
+        .search-container { padding: 8px 10px; }
+        .search-box { 
+            background: #141414; border-radius: 6px; padding: 5px 10px; 
+            display: flex; align-items: center; border: 1px solid var(--border); 
+        }
+        .search-box input { background: none; border: none; color: white; width: 100%; outline: none; font-size: 0.7rem; }
+
+        /* 📦 Micro Grid */
+        .main-content { flex-grow: 1; overflow-y: auto; padding: 0 8px 70px 8px; position: relative; }
+        #product-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+
+        .product-card {
+            background: var(--card-dark); border-radius: 6px; border: 1px solid #1a1a1a;
+            overflow: hidden; display: flex; flex-direction: column;
+            animation: cardFadeIn 0.4s ease forwards; opacity: 0;
+        }
+        @keyframes cardFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+        .product-img { width: 100%; aspect-ratio: 3/2; object-fit: cover; background: #111; }
+        .product-info { padding: 4px; }
+        .p-name { font-size: 0.52rem; font-weight: 600; color: #eee; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .p-price { font-size: 0.58rem; color: var(--nav-blue); font-weight: 800; }
+        .btn-purchase { width: 100%; background: #222; color: var(--nav-blue); border: 1px solid var(--nav-blue); border-radius: 4px; padding: 2px 0; font-size: 0.5rem; font-weight: 800; text-transform: uppercase; margin-top: 3px;}
+
+        /* 📱 Nav */
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; justify-content: space-around; padding: 5px 0; border-top: 1px solid #111; height: 48px; }
+        .nav-item { color: #444; font-size: 0.52rem; flex: 1; text-align: center; cursor: pointer; }
+        .nav-item i { font-size: 1rem; display: block; margin-bottom: 2px; }
+        .nav-item.active { color: var(--nav-blue); }
+    </style>
+</head>
+<body>
+
+<div id="page-loader">
+    <div class="spinner-box">
+        <div class="spinner"></div>
+        <div id="load-percent">0%</div>
+    </div>
+</div>
+
+<header>
+    <div class="header-left">
+        <button class="icon-btn" onclick="toggleMenu(event)"><i class="fa-solid fa-bars-staggered"></i></button>
+        <div id="dropdownContent" class="dropdown-menu">
+            <div class="drop-user-info">
+                <div class="drop-avatar" id="user_avatar"></div>
+                <div class="drop-name" id="user_name">Guest User</div>
+            </div>
+            <a href="MyProfile.html" class="drop-link"><i class="fa-regular fa-user"></i> My Profile</a>
+            <a href="Myreport.html" class="drop-link"><i class="fa-solid fa-file-invoice"></i> My Report</a>
+            <a href="myorder.html" class="drop-link"><i class="fa-solid fa-clock-rotate-left"></i> Orders</a>
+            <a href="#" class="drop-link" onclick="handleLogout()"><i class="fa-solid fa-power-off"></i> Logout</a>
+        </div>
+        <span class="store-title">Micro Shop</span>
+    </div>
+    <button class="icon-btn" onclick="location.href='cart.html'"><i class="fa-solid fa-cart-shopping"></i></button>
+</header>
+
+<div class="search-container">
+    <div class="search-box"><input type="text" id="searchInput" placeholder="Search..." onkeyup="doSearch()"></div>
+</div>
+
+<main class="main-content">
+    <div id="category-loader"><i class="fa-solid fa-circle-notch fa-spin" style="color: var(--nav-blue);"></i></div>
+    <div id="product-grid"></div>
+</main>
+
+<nav class="bottom-nav">
+    <div class="nav-item active" onclick="filterItems('all', this)"><i class="fa-solid fa-house"></i>All</div>
+    <div class="nav-item" onclick="filterItems('FRAME', this)"><i class="fa-solid fa-image"></i>Frames</div>
+    <div class="nav-item" onclick="filterItems('GIFT', this)"><i class="fa-solid fa-gift"></i>Gifts</div>
+</nav>
+
+<script type="module">
+    import { auth, db } from 'https://patel-102.github.io/Fantasy/firebase.js';
+    import { collection, onSnapshot, doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js';
+    import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js';
+
+    let masterProducts = [];
+    let activeCategory = 'all';
+
+    // 1. Percentage Loader Logic
+    function runInitialLoader() {
+        let count = 0;
+        const speed = setInterval(() => {
+            count += Math.floor(Math.random() * 15) + 2;
+            if (count >= 100) {
+                document.getElementById('load-percent').innerText = "100%";
+                clearInterval(speed);
+                setTimeout(() => document.getElementById('page-loader').style.display = 'none', 300);
+            } else {
+                document.getElementById('load-percent').innerText = count + "%";
+            }
+        }, 120);
+    }
+
+    // 2. Auth & User Profile Load
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            runInitialLoader();
+            const snap = await getDoc(doc(db, "users", user.uid));
+            if (snap.exists()) {
+                const data = snap.data();
+                document.getElementById('user_avatar').style.backgroundImage = `url('${data.image_url || ""}')`;
+                document.getElementById('user_name').innerText = data.name || "Adventurer";
+            }
+            listenToProducts();
+        } else {
+            window.location.href = "login.html";
+        }
+    });
+
+    // 3. Firestore Sync
+    function listenToProducts() {
+        onSnapshot(collection(db, "products"), (snap) => {
+            masterProducts = [];
+            snap.forEach(doc => masterProducts.push({ id: doc.id, ...doc.data() }));
+            renderDisplay();
+        });
+    }
+
+    // 4. Delayed Category Switch
+    window.filterItems = (cat, btn) => {
+        if (activeCategory === cat) return;
+        const loader = document.getElementById('category-loader');
+        loader.style.display = 'flex';
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        btn.classList.add('active');
+
+        setTimeout(() => {
+            activeCategory = cat;
+            renderDisplay();
+            loader.style.display = 'none';
+        }, 600);
+    };
+
+    // 5. Render Logic (4 Columns + Micro Image)
+    function renderDisplay() {
+        const grid = document.getElementById('product-grid');
+        grid.innerHTML = "";
+        const filtered = activeCategory === 'all' ? masterProducts : masterProducts.filter(p => p.category === activeCategory);
+        
+        filtered.forEach((item, index) => {
+            const card = document.createElement('div');
+            card.className = 'product-card';
+            card.style.animationDelay = `${index * 0.04}s`;
+            card.onclick = () => location.href = `product_details.html?id=${item.id}`;
+            card.innerHTML = `
+                <img src="${item.product_url || 'https://via.placeholder.com/150x100'}" class="product-img">
+                <div class="product-info">
+                    <div class="p-name">${item.name}</div>
+                    <div class="p-price">${item.price}</div>
+                    <button class="btn-purchase">Get</button>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+    }
+
+    // 6. UI Helpers
+    window.toggleMenu = (e) => {
+        e.stopPropagation();
+        document.getElementById("dropdownContent").classList.toggle("show");
+    };
+
+    window.onclick = (e) => {
+        if (!e.target.closest('.header-left')) {
+            document.getElementById("dropdownContent").classList.remove("show");
+        }
+    };
+
+    window.handleLogout = () => {
+        if(confirm("Exit the shop?")) signOut(auth).then(() => window.location.href="login.html");
+    };
+
+    window.doSearch = () => {
+        const term = document.getElementById('searchInput').value.toLowerCase();
+        document.querySelectorAll('.product-card').forEach(card => {
+            const name = card.querySelector('.p-name').textContent.toLowerCase();
+            card.style.display = name.includes(term) ? "flex" : "none";
+        });
+    };
+</script>
+</body>
+</html>
