@@ -11,14 +11,28 @@
         .firewall-card { background: #050505; border: 1px solid #111; border-radius: 2rem; position: relative; }
         .packet-stream { height: 80px; overflow: hidden; position: relative; background: #080808; border-radius: 12px; border: 1px solid #1a1a1a; }
         .packet-line { position: absolute; width: 100%; color: #2563eb; font-family: monospace; font-size: 7px; animation: move-up 2.5s linear infinite; }
-        @keyframes move-up { 0% { transform: translateY(80px); opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { transform: translateY(-20px); opacity: 0; } }
+        @keyframes move-up { 0% { transform: translateY(80px); opacity: 0; } 100% { transform: translateY(-20px); opacity: 0; } }
         .bridge-scan { position: absolute; top: 0; width: 100%; height: 2px; background: #3b82f6; box-shadow: 0 0 15px #3b82f6; animation: scan 4s infinite linear; }
         @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
         .shake { animation: shake 0.4s; border-color: #ef4444 !important; }
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+        .timer-red { color: #ef4444 !important; animation: pulse 1s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        
+        /* Permission Overlay Style */
+        #geo-prompt { background: rgba(0,0,0,0.9); backdrop-filter: blur(10px); display: none; }
     </style>
 </head>
 <body>
+
+    <div id="geo-prompt" class="fixed inset-0 z-[10000] flex items-center justify-center p-6">
+        <div class="glass-panel max-w-xs w-full p-6 border border-blue-500/30 bg-zinc-900 rounded-3xl text-center">
+            <i class="fas fa-location-dot text-blue-500 text-3xl mb-4 animate-bounce"></i>
+            <h2 class="text-[10px] font-black uppercase tracking-widest mb-2">Location Authorization</h2>
+            <p class="text-[8px] text-zinc-500 uppercase leading-relaxed mb-6 font-bold">Node synchronization requires precise geographic coordinates to verify residential integrity.</p>
+            <button id="grant-btn" class="w-full py-3 bg-blue-600 rounded-xl text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all">Grant Access</button>
+        </div>
+    </div>
 
     <div id="bridge-overlay" class="fixed inset-0 z-[9999] bg-black flex items-center justify-center p-4">
         <div id="main-card" class="firewall-card max-w-sm w-full p-8 overflow-hidden border border-white/5">
@@ -32,6 +46,10 @@
 
             <div id="packet-console" class="packet-stream mb-6 p-2">
                 <div id="stream-content"></div>
+            </div>
+
+            <div id="timer-container" class="hidden text-center mb-4">
+                <p class="text-[7px] font-black text-zinc-500 uppercase tracking-[0.3em]">Session Expires In: <span id="countdown" class="text-blue-500">60</span>s</p>
             </div>
 
             <div id="auth-layers" class="hidden space-y-4">
@@ -54,7 +72,7 @@
             </div>
 
             <div class="mt-6 flex justify-between text-[6px] font-bold text-zinc-700 uppercase">
-                <span>Status: <span id="meta-node" class="text-zinc-500">Scanning...</span></span>
+                <span>Node: <span id="meta-node" class="text-zinc-500">Scanning...</span></span>
                 <span>ID: <span id="meta-id">---</span></span>
             </div>
         </div>
@@ -62,14 +80,13 @@
 
     <script type="module">
         import { db } from 'https://patel-102.github.io/Fantasy/firebase.js';
-        import { collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js';
+        import { collection, addDoc, getDocs, query, where, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js';
 
-        // --- 🔐 ENCRYPTED PAYLOAD DATA (Base64) ---
         const _0xPayload = {
-            tkn: "YTI2N2U0MzQwYzM0YmQ=", // Your IPinfo Token
-            tgt: "bG9naW4uaHRtbA==",     // login.html
-            msg_1: "RVJST1I6IFZJUlRVQUxfTUFDSElORV9ERVRFQ1RERA==", // VM Detected
-            msg_2: "RVJST1I6IE5FVFdPUktfTUFTS0lOR19CTE9DS0VE"      // VPN Detected
+            tkn: "YTI2N2U0MzQwYzM0YmQ=",
+            tgt: "bG9naW4uaHRtbA==",
+            msg_1: "RVJST1I6IFZJUlRVQUxfTUFDSElORV9ERVRFQ1RERA==",
+            msg_2: "RVJST1I6IE5FVFdPUktfTUFTS0lOR19CTE9DS0VE"
         };
         const decrypt = (str) => atob(str);
 
@@ -78,23 +95,23 @@
         const captchaInput = document.getElementById('captcha-input');
         const card = document.getElementById('main-card');
         const stream = document.getElementById('stream-content');
+        const countdownEl = document.getElementById('countdown');
+        const geoPrompt = document.getElementById('geo-prompt');
+        const grantBtn = document.getElementById('grant-btn');
 
         let bridgeSecret = "";
         let isSystemClean = true;
+        let userLocation = "Unknown Node";
+        let timeLeft = 60;
+        let timerActive = false;
 
-        // --- 🕵️ ADVANCED DETECTION: Environment Integrity ---
         function runIntegrityScan() {
-            // Detect if screen is too small or browser is being controlled by automation
             if (window.outerWidth === 0 || window.outerHeight === 0 || navigator.webdriver) {
                 isSystemClean = false;
                 document.getElementById('status-msg').innerText = decrypt(_0xPayload.msg_1);
             }
             
-            const logs = [
-                "INITIATING_CORE_SCAN...", "OBFUSCATING_PAYLOADS...", "CHECKING_WEBDRIVER_FLAGS...",
-                "VERIFYING_HARDWARE_ACCEL...", "FETCHING_NETWORK_INTEL...", "DECRYPTING_BRIDGE_KEY..."
-            ];
-
+            const logs = ["INIT_CORE...", "VERIFYING_HARDWARE...", "FETCHING_GEOLOCATION...", "DECRYPTING_BRIDGE..."];
             logs.forEach((text, i) => {
                 setTimeout(() => {
                     const p = document.createElement('div');
@@ -112,21 +129,52 @@
             try {
                 const res = await fetch(`https://ipinfo.io/json?token=${decrypt(_0xPayload.tkn)}`);
                 const data = await res.json();
+                userLocation = `${data.city}, ${data.region}, ${data.country}`;
                 
-                const blocked = data.privacy?.vpn || data.privacy?.proxy || data.privacy?.hosting || data.country !== "IN";
+                const blackQuery = query(collection(db, "blacklist"), where("ip", "==", data.ip));
+                const blackSnap = await getDocs(blackQuery);
+                
+                if (!blackSnap.empty) {
+                    document.getElementById('status-msg').innerText = "NODE_TERMINATED: ACCESS_REVOKED";
+                    return;
+                }
 
-                if (blocked) {
+                if (data.privacy?.vpn || data.privacy?.proxy || data.country !== "IN") {
                     document.getElementById('status-msg').innerText = decrypt(_0xPayload.msg_2);
-                    document.getElementById('status-msg').style.color = "#ef4444";
                 } else {
                     document.getElementById('meta-id').innerText = data.ip;
-                    document.getElementById('meta-node').innerText = "India (Residential)";
+                    document.getElementById('meta-node').innerText = userLocation;
                     document.getElementById('status-msg').innerText = "INTEGRITY CLEAR: READY";
                     document.getElementById('auth-layers').classList.remove('hidden');
+                    document.getElementById('timer-container').classList.remove('hidden');
+                    startKickTimer();
                 }
             } catch (e) {
-                document.getElementById('status-msg').innerText = "CRYPTO_HANDSHAKE_FAILED";
+                document.getElementById('status-msg').innerText = "HANDSHAKE_TIMEOUT";
             }
+        }
+
+        function startKickTimer() {
+            timerActive = true;
+            const timer = setInterval(() => {
+                timeLeft--;
+                countdownEl.innerText = timeLeft;
+                if (timeLeft <= 10) countdownEl.className = "timer-red";
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    terminateSession();
+                }
+            }, 1000);
+        }
+
+        async function terminateSession() {
+            timerActive = false;
+            document.getElementById('auth-layers').innerHTML = `<div class="p-6 text-center bg-red-900/10 rounded-2xl font-black text-red-500 text-[9px] uppercase">Session Expired</div>`;
+            await addDoc(collection(db, "security_logs"), {
+                ip: document.getElementById('meta-id').innerText,
+                type: "TIMEOUT_KICK",
+                timestamp: serverTimestamp()
+            });
         }
 
         window.genSecret = () => {
@@ -134,36 +182,42 @@
             document.getElementById('captcha-display').innerText = bridgeSecret;
         };
 
+        // --- 🤖 MODIFIED ROBOT CHECK: TRIGGERS PERMISSION MODAL ---
         robotCheck.onchange = (e) => {
             if (e.target.checked) {
-                document.getElementById('challenge-layer').classList.remove('hidden');
-                genSecret();
+                geoPrompt.style.display = 'flex';
             } else {
                 document.getElementById('challenge-layer').classList.add('hidden');
             }
         };
 
-        bridgeBtn.onclick = async () => {
-            const userCode = captchaInput.value.toUpperCase();
+        grantBtn.onclick = () => {
+            geoPrompt.style.display = 'none';
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((pos) => {
+                    userLocation = `${pos.coords.latitude},${pos.coords.longitude}`;
+                    document.getElementById('meta-node').innerText = "GPS_LOCKED";
+                    document.getElementById('meta-node').style.color = "#22c55e";
+                });
+            }
+            document.getElementById('challenge-layer').classList.remove('hidden');
+            genSecret();
+        };
 
-            if (!robotCheck.checked || userCode !== bridgeSecret || userCode === "") {
+        bridgeBtn.onclick = async () => {
+            if (!timerActive || captchaInput.value.toUpperCase() !== bridgeSecret) {
                 card.classList.add('shake');
                 setTimeout(() => card.classList.remove('shake'), 400);
-                if(robotCheck.checked) genSecret();
-                captchaInput.value = "";
                 return;
             }
-
-            bridgeBtn.innerText = "BRIDGE_OPEN";
-            bridgeBtn.style.background = "#059669";
-
+            timerActive = false;
             await addDoc(collection(db, "security_logs"), {
                 ip: document.getElementById('meta-id').innerText,
-                type: "ENCRYPTED_BRIDGE_AUTH",
+                location: userLocation,
+                type: "AUTH_SUCCESS",
                 timestamp: serverTimestamp()
             });
-
-            setTimeout(() => { window.location.href = decrypt(_0xPayload.tgt); }, 1000);
+            window.location.href = decrypt(_0xPayload.tgt);
         };
 
         runIntegrityScan();
