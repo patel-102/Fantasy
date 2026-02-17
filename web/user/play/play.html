@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pixel Runner: Optimized</title>
+    <style>
+        :root { --sky: #a5d6f7; --accent: #2c3e50; --grass: #2ecc71; --btn-bg: #ffffff; }
+        body { margin: 0; overflow: hidden; background: var(--sky); font-family: 'Segoe UI', sans-serif; touch-action: none; }
+        canvas { display: block; image-rendering: pixelated; }
+        .hud { position: fixed; top: 20px; width: 100%; display: flex; justify-content: center; pointer-events: none; z-index: 10; }
+        .score-card { background: rgba(255,255,255,0.3); backdrop-filter: blur(8px); padding: 10px 25px; border: 2px solid var(--accent); border-radius: 15px; color: var(--accent); text-align: center; }
+        .score-val { font-size: 28px; font-weight: 900; display: block; }
+        .controls { position: fixed; bottom: 30px; width: 100%; display: flex; justify-content: space-between; padding: 0 30px; box-sizing: border-box; z-index: 10; }
+        .btn { width: 65px; height: 65px; background: var(--btn-bg); border: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; user-select: none; box-shadow: 0 6px 0px rgba(0,0,0,0.1); }
+        #jump-btn { width: 110px; border-radius: 35px; background: #ff7675; color: white; font-weight: bold; }
+        #overlay { position: fixed; inset: 0; background: rgba(44, 62, 80, 0.95); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 100; color: white; text-align: center; }
+        .restart-btn { margin-top: 20px; padding: 15px 40px; font-size: 20px; background: var(--grass); color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="hud"><div class="score-card"><span class="score-val" id="score">0</span><span>METERS</span></div></div>
+<div id="overlay"><h1 id="death-msg">WIPED OUT</h1><p id="sub-msg"></p><button class="restart-btn" onclick="reset()">RETRY</button></div>
+
+<div class="controls">
+    <div style="display: flex; gap: 15px;">
+        <div class="btn" id="left">←</div>
+        <div class="btn" id="right">→</div>
+    </div>
+    <div class="btn" id="jump-btn">JUMP</div>
+</div>
+
+<canvas id="game"></canvas>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+const scoreEl = document.getElementById("score");
+const overlay = document.getElementById("overlay");
+
+const phrasesGeneral = ["UGH!", "REALLY?!", "NO!", "HELP!", "SO HARD!", "LAGGING!", "WHY?!", "STUPID PHYSICS!", "I HATE THIS!", "DON'T FALL!"];
+const phrasesDanger = ["WATCH THE ARROWS!", "STOP SHOOTING!", "PUSH THE BOX!", "SO UNLUCKY!", "ARROWS EVERYWHERE!", "BOX IS HEAVY!"];
+
+// Game Configuration
+const CONFIG = {
+    gravity: 0.5,
+    friction: 0.75,
+    maxSpeed: 3.5,
+    accel: 0.25,
+    jumpForce: 12.5,
+    dinoSpeed: 3.2
+};
+
+let world, player, keys;
+
+function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+window.addEventListener("resize", resize);
+resize();
+
+function triggerSpeech() {
+    const dist = Math.floor(player.worldX / 50);
+    const list = (dist >= 110 && dist <= 140) ? phrasesDanger : phrasesGeneral;
+    let newText;
+    do {
+        newText = list[Math.floor(Math.random() * list.length)];
+    } while (newText === world.speech.text);
+    world.speech.text = newText;
+    world.speech.timer = 60;
+}
+
+const setupInputs = () => {
+    keys = { left: false, right: false };
+    const setKey = (key, val) => (e) => { e.preventDefault(); keys[key] = val; };
+    
+    const leftBtn = document.getElementById("left");
+    const rightBtn = document.getElementById("right");
+    const jumpBtn = document.getElementById("jump-btn");
+
+    ["touchstart", "mousedown"].forEach(evt => {
+        leftBtn.addEventListener(evt, setKey("left", true));
+        rightBtn.addEventListener(evt, setKey("right", true));
+        jumpBtn.addEventListener(evt, (e) => {
+            e.preventDefault();
+            if (player.grounded && !world.gameOver) {
+                player.vy = player.inverted ? CONFIG.jumpForce : -CONFIG.jumpForce;
+                player.grounded = false;
+                triggerSpeech();
+            }
+        });
+    });
+
+    ["touchend", "mouseup", "mouseleave"].forEach(evt => {
+        leftBtn.addEventListener(evt, setKey("left", false));
+        rightBtn.addEventListener(evt, setKey("right", false));
+    });
+};
+
+function reset() {
+    world = {
+        frame: 0, cameraX: 0, gameOver: false, shake: 0,
+        platforms: [{ x: -500, y: canvas.height - 100, w: 1200, h: 500, falling: false }],
+        boxes: [], arrows: [], currentGravity: CONFIG.gravity,
+        rescueUsed: false, rescuePlatform: { active: false, x: 0, y: 0, w: 120, h: 18 },
+        dino: { active: false, x: -500, y: 0, w: 60, h: 60, fallen: false },
+        speech: { text: "", timer: 0 }
+    };
+    player = {
+        worldX: 150, y: -400, vx: 0, vy: 0, w: 24, h: 44,
+        grounded: false, facing: 1, inverted: false, particles: []
+    };
+    overlay.style.display = "none";
+    scoreEl.innerText = "0";
+}
+
+function triggerDeath(msg) {
+    if (world.gameOver) return;
+    world.gameOver = true;
+    world.shake = 20;
+    for (let i = 0; i < 30; i++) {
+        player.particles.push({
+            x: 150 + (player.worldX - world.cameraX - 150),
+            y: player.y + 20,
+            vx: (Math.random() - 0.5) * 7,
+            vy: (Math.random() - 0.5) * 7,
+            size: Math.random() * 6 + 2,
+            color: i % 2 === 0 ? "#3498db" : "#ffdbac"
+        });
+    }
+    document.getElementById("death-msg").innerText = msg;
+    document.getElementById("sub-msg").innerText = phrasesGeneral[Math.floor(Math.random() * phrasesGeneral.length)];
+    setTimeout(() => overlay.style.display = "flex", 800);
+}
+
+function update() {
+    if (world.gameOver) {
+        player.particles.forEach(p => { p.x += p.vx; p.y += p.vy; p.vy += 0.2; });
+        return;
+    }
+
+    world.frame++;
+    if (world.shake > 0) world.shake--;
+    if (world.speech.timer > 0) world.speech.timer--;
+
+    // Horizontal Movement
+    if (keys.left) { player.vx -= CONFIG.accel; player.facing = -1; }
+    else if (keys.right) { player.vx += CONFIG.accel; player.facing = 1; }
+    else { player.vx *= CONFIG.friction; }
+    player.vx = Math.max(-CONFIG.maxSpeed, Math.min(CONFIG.maxSpeed, player.vx));
+
+    player.vy += world.currentGravity;
+    player.worldX += player.vx;
+    player.y += player.vy;
+    world.cameraX = player.worldX - 150;
+
+    const dist = Math.floor(player.worldX / 50);
+    scoreEl.innerText = Math.max(0, dist);
+
+    // Hazard Generation & Logic
+    if (dist >= 110 && dist <= 140) {
+        if (world.boxes.length === 0) world.boxes.push({ x: 112 * 50, y: canvas.height - 180, w: 70, h: 80 });
+        if (world.frame % 35 === 0) world.arrows.push({ x: player.worldX + 900, y: canvas.height - 130, vx: -10 });
+    }
+    
+    // Cleanup Arrows
+    world.arrows = world.arrows.filter(a => {
+        a.x += a.vx;
+        const hit = (a.x > player.worldX && a.x < player.worldX + player.w && a.y > player.y && a.y < player.y + player.h);
+        if (hit) triggerDeath("PIERCED!");
+        return a.x > world.cameraX - 100;
+    });
+
+    // Box Collision
+    world.boxes.forEach(b => {
+        if (player.worldX + player.w > b.x && player.worldX < b.x + b.w && player.y + player.h > b.y) {
+            if (player.vx > 0) b.x = player.worldX + player.w;
+        }
+    });
+
+    // Dino & Platforms
+    if (dist >= 250 && dist < 350 && !world.dino.fallen) {
+        world.dino.active = true;
+        world.dino.x += CONFIG.dinoSpeed;
+        world.shake = 3;
+        world.platforms.forEach(p => { if (p.x < world.dino.x - 40) p.falling = true; });
+        if (world.dino.x + 50 > player.worldX) triggerDeath("THE DINO CAUGHT YOU!");
+    }
+
+    // Platform Collisions
+    player.grounded = false;
+    world.platforms.forEach(p => {
+        if (p.falling) { p.vy = (p.vy || 0) + 0.2; p.y += p.vy; }
+        
+        const withinX = player.worldX + player.w > p.x && player.worldX < p.x + p.w;
+        if (withinX) {
+            if (!player.inverted && player.vy >= 0 && (player.y + player.h) >= p.y && (player.y + player.h) <= p.y + 35) {
+                player.y = p.y - player.h; player.vy = 0; player.grounded = true;
+                if (p.isInverter) { player.inverted = true; world.currentGravity = -0.5; player.vy = 2; }
+            } else if (player.inverted && player.vy <= 0 && player.y <= p.y + 25) {
+                player.y = p.y + 20; player.vy = 0; player.grounded = true;
+                if (!p.isInverter && !p.isFloating) { player.inverted = false; world.currentGravity = CONFIG.gravity; }
+            }
+        }
+    });
+
+    // Gates
+    if (dist >= 400 && dist < 402 && player.grounded) triggerDeath("SCAMMED!");
+    if (dist >= 420) {
+        world.gameOver = true;
+        overlay.style.backgroundColor = "rgba(46, 204, 113, 0.9)";
+        triggerDeath("LEVEL COMPLETE!");
+    }
+
+    // Procedural Generation
+    let last = world.platforms[world.platforms.length - 1];
+    if (last.x - world.cameraX < canvas.width + 1000) {
+        let m = Math.floor((last.x + last.w) / 50);
+        let width = 1500, gap = 0, nextY = canvas.height - 100;
+        if (m < 100) { width = 180; gap = 160; }
+        else if (m >= 150 && m < 220) { 
+            world.platforms.push({ x: last.x + last.w + 400, y: nextY - 220, w: 400, h: 25, isFloating: true });
+            width = 800; gap = 0;
+        }
+        else if (m >= 250 && m < 350) {
+            world.platforms.push({ x: last.x + last.w + 80, y: nextY - 180, w: 120, h: 20, isFloating: true, isInverter: true });
+            width = 100; gap = 60;
+        }
+        world.platforms.push({ x: last.x + last.w + gap, y: nextY, w: width, h: 1000, falling: false });
+    }
+
+    // Death zones
+    if (player.y > canvas.height + 500 || player.y < -1000) triggerDeath("WATCH YOUR STEP!");
+}
+
+function draw() {
+    ctx.save();
+    if (world.shake > 0) ctx.translate(Math.random() * 4 - 2, Math.random() * 4 - 2);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw Gates
+    ctx.fillStyle = "gold"; ctx.fillRect(400 * 50 - world.cameraX, canvas.height - 250, 80, 150);
+    ctx.fillStyle = "#2ecc71"; ctx.fillRect(420 * 50 - world.cameraX, canvas.height - 250, 80, 150);
+
+    // Draw Platforms
+    world.platforms.forEach(p => {
+        ctx.fillStyle = p.isInverter ? "#9b59b6" : (p.isFloating ? "#ecf0f1" : "#576574");
+        ctx.fillRect(p.x - world.cameraX, p.y, p.w + 1, p.h || canvas.height);
+        if (!p.isInverter) { ctx.fillStyle = "#2ecc71"; ctx.fillRect(p.x - world.cameraX, p.y, p.w + 1, 8); }
+    });
+
+    world.boxes.forEach(b => { ctx.fillStyle = "#795548"; ctx.fillRect(b.x - world.cameraX, b.y, b.w, b.h); });
+    ctx.fillStyle = "black"; world.arrows.forEach(a => ctx.fillRect(a.x - world.cameraX, a.y, 25, 3));
+    if (world.dino.active) { ctx.fillStyle = "#535353"; ctx.fillRect(world.dino.x - world.cameraX, canvas.height - 160, 60, 60); }
+
+    // Draw Player
+    if (!world.gameOver) {
+        ctx.save();
+        ctx.translate(150 + 12, player.y + 22);
+        if (player.facing === -1) ctx.scale(-1, 1);
+        if (player.inverted) ctx.scale(1, -1);
+        ctx.fillStyle = "#3498db"; ctx.fillRect(-8, -10, 16, 20);
+        ctx.fillStyle = "#ffdbac"; ctx.fillRect(-6, -22, 12, 12);
+        ctx.strokeStyle = "#1a252f"; ctx.lineWidth = 4;
+        const limb = (Math.abs(player.vx) > 0.1) ? Math.sin(world.frame * 0.1) * 8 : 0;
+        ctx.beginPath(); ctx.moveTo(0, 10); ctx.lineTo(limb, 22); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, 10); ctx.lineTo(-limb, 22); ctx.stroke();
+        ctx.restore();
+
+        if (world.speech.timer > 0) {
+            ctx.fillStyle = "white"; ctx.fillRect(150 - 25, player.y - 65, 110, 25);
+            ctx.fillStyle = "black"; ctx.font = "bold 10px Arial"; ctx.textAlign = "center";
+            ctx.fillText(world.speech.text, 150 + 30, player.y - 48);
+        }
+    }
+
+    player.particles.forEach(p => { ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, p.size, p.size); });
+    ctx.restore();
+}
+
+function loop() {
+    update();
+    draw();
+    requestAnimationFrame(loop);
+}
+
+setupInputs();
+reset();
+loop();
+</script>
+</body>
+</html>
