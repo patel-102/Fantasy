@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>NEXUS | Hyper-Archive</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        /* -----------------------------------------------------------
+           SYSTEM VARIABLES
+        ----------------------------------------------------------- */
+        :root {
+            --accent: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, 0.25);
+            --bg: #050505;
+            --surface: #0a0a0c;
+            --panel: #0d0d0f;
+            --panel-lite: #141417;
+            --border: rgba(255, 255, 255, 0.05);
+            --border-heavy: rgba(255, 255, 255, 0.1);
+            --text-main: #f8fafc;
+            --text-dim: #52525b;
+            --text-mute: #3f3f46;
+            --safe-bottom: env(safe-area-inset-bottom);
+            --transition: cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        /* -----------------------------------------------------------
+           BASE RESET & SCROLLING
+        ----------------------------------------------------------- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            scrollbar-width: none;
+        }
+
+        *::-webkit-scrollbar { display: none; }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            overflow-x: hidden;
+            width: 100vw;
+            min-height: 100vh;
+            padding-bottom: 120px;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* -----------------------------------------------------------
+           HYPER-MICRO HEADER
+        ----------------------------------------------------------- */
+        .os-header {
+            height: 40px;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: sticky;
+            top: 0;
+            z-index: 5000;
+            background: rgba(5, 5, 5, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            transition: all 0.4s var(--transition);
+        }
+
+        .os-header.scrolled {
+            height: 34px;
+            background: rgba(5, 5, 5, 0.98);
+        }
+
+        .brand-text {
+            font-size: 7.5px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.6em;
+            color: var(--text-dim);
+            transition: 0.3s;
+        }
+
+        /* -----------------------------------------------------------
+           FEED & CONTAINER
+        ----------------------------------------------------------- */
+        .archive-viewport {
+            width: 100%;
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* -----------------------------------------------------------
+           THE NANO-BUBBLE COMPONENT
+        ----------------------------------------------------------- */
+        .node-bubble {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            overflow: hidden;
+            width: 100%;
+            max-width: 240px; /* Locked Minimize */
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.4s var(--transition), border 0.4s;
+            animation: nodeSlideIn 0.8s var(--transition) backwards;
+        }
+
+        @keyframes nodeSlideIn {
+            from { opacity: 0; transform: translateY(20px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .node-bubble:active {
+            transform: scale(0.98);
+            border-color: var(--border-heavy);
+        }
+
+        /* Bubble Header */
+        .node-top {
+            padding: 10px 14px 6px 14px;
+            text-align: center;
+        }
+
+        .node-title {
+            font-size: 9px;
+            font-weight: 800;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            display: -webkit-box;
+            -webkit-line-clamp: 1;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* Bubble Media */
+        .node-media {
+            width: 90%;
+            margin: 0 auto;
+            border-radius: 12px;
+            aspect-ratio: auto;
+            overflow: hidden;
+            background: #000;
+            position: relative;
+            cursor: zoom-in;
+        }
+
+        .node-media img {
+            width: 100%;
+            height: auto;
+            display: block;
+            object-fit: contain;
+            transition: opacity 0.5s ease;
+        }
+
+        .node-media::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(0deg, rgba(0,0,0,0.2), transparent);
+            pointer-events: none;
+        }
+
+        /* Bubble Content */
+        .node-meta {
+            padding: 10px 14px 14px 14px;
+            text-align: center;
+        }
+
+        .node-text {
+            font-size: 9.5px;
+            line-height: 1.45;
+            color: var(--text-dim);
+            font-weight: 400;
+            word-wrap: break-word;
+            margin-bottom: 6px;
+        }
+
+        .node-timestamp {
+            font-size: 6px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--accent);
+            opacity: 0.8;
+        }
+
+        /* -----------------------------------------------------------
+           DYNAMIC LIGHTBOX
+        ----------------------------------------------------------- */
+        #os-lightbox {
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 2, 3, 0.98);
+            z-index: 10000;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+        }
+
+        #os-lightbox.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        #os-lightbox img {
+            max-width: 95%;
+            max-height: 85vh;
+            border-radius: 8px;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            transform: scale(0.9);
+            transition: transform 0.4s var(--transition);
+        }
+
+        #os-lightbox.active img {
+            transform: scale(1);
+        }
+
+        /* -----------------------------------------------------------
+           SYSTEM NOTIFIER
+        ----------------------------------------------------------- */
+        #os-toast {
+            position: fixed;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #fff;
+            color: #000;
+            padding: 6px 14px;
+            border-radius: 50px;
+            font-size: 8px;
+            font-weight: 900;
+            text-transform: uppercase;
+            z-index: 9999;
+            opacity: 0;
+            pointer-events: none;
+            transition: 0.4s;
+        }
+
+        /* -----------------------------------------------------------
+           FANTASY DOCK (5-BUTTON NANO)
+        ----------------------------------------------------------- */
+        .dock-wrapper {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9000;
+            padding-bottom: var(--safe-bottom);
+        }
+
+        .dock-container {
+            background: var(--glass);
+            backdrop-filter: blur(30px) saturate(1.5);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 26px;
+            padding: 5px;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+        }
+
+        .dock-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 54px;
+            height: 44px;
+            border-radius: 18px;
+            color: var(--text-mute);
+            text-decoration: none;
+            transition: 0.3s var(--transition);
+            position: relative;
+        }
+
+        .dock-item i {
+            font-size: 13px;
+            margin-bottom: 2px;
+        }
+
+        .dock-item span {
+            font-size: 5.5px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.2px;
+        }
+
+        .dock-item.active {
+            color: #fff;
+            background: var(--accent);
+            box-shadow: 0 4px 12px var(--accent-glow);
+        }
+
+        .dock-item:active {
+            transform: translateY(-2px);
+        }
+
+        /* -----------------------------------------------------------
+           ANIMATIONS & UTILITIES
+        ----------------------------------------------------------- */
+        .shimmer {
+            background: linear-gradient(90deg, var(--panel) 25%, var(--panel-lite) 50%, var(--panel) 75%);
+            background-size: 200% 100%;
+            animation: shimmerEffect 1.5s infinite;
+        }
+
+        @keyframes shimmerEffect {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .hidden { display: none !important; }
+
+    </style>
+</head>
+<body class="hide-scroll">
+
+    <div id="os-toast">System Synced</div>
+    <div id="os-lightbox" onclick="VlogManager.closeZoom()">
+        <img id="zoom-target" src="" alt="zoom">
+    </div>
+
+    <header class="os-header" id="main-header">
+        <div class="brand-text">Nexus Archive</div>
+    </header>
+
+    <main class="archive-viewport" id="vlog-feed">
+        <div class="node-bubble shimmer h-32 opacity-20"></div>
+        <div class="node-bubble shimmer h-32 opacity-10"></div>
+        <div class="node-bubble shimmer h-32 opacity-5"></div>
+    </main>
+
+    <div class="dock-wrapper">
+        <nav class="dock-container">
+            <a href="shop.html" class="dock-item">
+                <i class="fas fa-shopping-bag"></i>
+                <span>Shop</span>
+            </a>
+            <a href="kart.html" class="dock-item">
+                <i class="fas fa-box-open"></i>
+                <span>Kart</span>
+            </a>
+            <a href="profile.html" class="dock-item">
+                <i class="fas fa-user-circle"></i>
+                <span>User</span>
+            </a>
+            <a href="games.html" class="dock-item">
+                <i class="fas fa-gamepad"></i>
+                <span>Play</span>
+            </a>
+            <a href="myblog.html" class="dock-item active">
+                <i class="fas fa-stream"></i>
+                <span>Blog</span>
+            </a>
+        </nav>
+    </div>
+
+    <script type="module">
+        /* Import Firebase Modules */
+        import { db } from 'https://patel-102.github.io/Fantasy/firebase2.js';
+        import { 
+            collection, 
+            query, 
+            onSnapshot, 
+            orderBy, 
+            limit 
+        } from 'https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js';
+
+        /**
+         * VlogManager Engine
+         * Handles all logic for fetching, rendering, and interaction
+         */
+        const VlogManager = {
+            state: {
+                entries: [],
+                isLoading: true,
+                lastScrollTop: 0
+            },
+
+            /**
+             * Initialize System
+             */
+            init() {
+                console.log("Nexus System: Initializing Archive Engine...");
+                this.bindGlobalEvents();
+                this.startDatabaseSync();
+            },
+
+            /**
+             * Bind Global Listeners
+             */
+            bindGlobalEvents() {
+                // Header Scroll Effect
+                window.addEventListener('scroll', () => {
+                    const header = document.getElementById('main-header');
+                    if (window.scrollY > 20) {
+                        header.classList.add('scrolled');
+                    } else {
+                        header.classList.remove('scrolled');
+                    }
+                }, { passive: true });
+
+                // Keyboard Listeners
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') this.closeZoom();
+                });
+            },
+
+            /**
+             * Firestore Real-time Sync
+             */
+            startDatabaseSync() {
+                try {
+                    const blogRef = collection(db, "blogs");
+                    const q = query(blogRef, orderBy("createdAt", "desc"), limit(50));
+
+                    onSnapshot(q, (snapshot) => {
+                        this.state.entries = snapshot.docs.map(doc => ({
+                            id: doc.id,
+                            ...doc.data()
+                        }));
+                        
+                        this.state.isLoading = false;
+                        this.renderFeed();
+                        this.notify("Archive Synchronized");
+                    }, (error) => {
+                        console.error("Sync Error:", error);
+                        this.notify("Connection Failed");
+                    });
+                } catch (e) {
+                    this.notify("System Error");
+                }
+            },
+
+            /**
+             * Main Render Cycle
+             */
+            renderFeed() {
+                const feedContainer = document.getElementById('vlog-feed');
+                
+                if (this.state.entries.length === 0) {
+                    feedContainer.innerHTML = `
+                        <div class="text-center py-20 opacity-20">
+                            <i class="fas fa-terminal mb-2 text-xs"></i>
+                            <p class="text-[8px] font-bold uppercase tracking-widest">No Logs Found</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Clear feed
+                feedContainer.innerHTML = "";
+
+                // Build Fragments
+                this.state.entries.forEach((item, index) => {
+                    const node = this.createNode(item, index);
+                    feedContainer.appendChild(node);
+                });
+            },
+
+            /**
+             * Component Factory: Create Bubble Node
+             */
+            createNode(data, index) {
+                const bubble = document.createElement('article');
+                bubble.className = "node-bubble";
+                bubble.style.animationDelay = `${index * 0.1}s`;
+
+                // Handle Date
+                const dateRaw = data.createdAt?.seconds ? new Date(data.createdAt.seconds * 1000) : new Date();
+                const dateString = dateRaw.toLocaleDateString('en-GB', {
+                    day: '2-digit', 
+                    month: 'short'
+                });
+
+                bubble.innerHTML = `
+                    <div class="node-top">
+                        <h2 class="node-title">${data.title || 'Untitled Node'}</h2>
+                    </div>
+                    <div class="node-media" onclick="VlogManager.openZoom('${data.image}')">
+                        <img src="${data.image}" alt="media" loading="lazy" 
+                             onerror="this.src='https://placehold.co/400x400/0d0d0f/52525b?text=Nexus+Media'">
+                    </div>
+                    <div class="node-meta">
+                        <p class="node-text">${data.content || ''}</p>
+                        <span class="node-timestamp">${dateString} // LOG_${index + 101}</span>
+                    </div>
+                `;
+
+                return bubble;
+            },
+
+            /**
+             * Interaction: Image Lightbox
+             */
+            openZoom(src) {
+                const lb = document.getElementById('os-lightbox');
+                const img = document.getElementById('zoom-target');
+                img.src = src;
+                lb.style.display = 'flex';
+                setTimeout(() => lb.classList.add('active'), 10);
+                document.body.style.overflow = 'hidden';
+            },
+
+            closeZoom() {
+                const lb = document.getElementById('os-lightbox');
+                lb.classList.remove('active');
+                setTimeout(() => {
+                    lb.style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                }, 300);
+            },
+
+            /**
+             * System Notification
+             */
+            notify(msg) {
+                const toast = document.getElementById('os-toast');
+                toast.innerText = msg;
+                toast.style.opacity = "1";
+                setTimeout(() => toast.style.opacity = "0", 2500);
+            }
+        };
+
+        // Export to Window for onclick handlers
+        window.VlogManager = VlogManager;
+
+        // Launch Engine
+        VlogManager.init();
+    </script>
+</body>
+</html>
