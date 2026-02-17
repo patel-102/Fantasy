@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>FANTASY OS | Nano Warehouse</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        /* -----------------------------------------------------------
+           1. CORE SYSTEM VARIABLES (FANTASY OS v4.0)
+        ----------------------------------------------------------- */
+        :root {
+            --accent: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, 0.35);
+            --bg: #050505;
+            --panel: #0d0d0f;
+            --panel-lite: #141417;
+            --border: rgba(255, 255, 255, 0.05);
+            --text-main: #f8fafc;
+            --text-dim: #52525b;
+            --glass: rgba(10, 10, 12, 0.7);
+            --safe-bottom: env(safe-area-inset-bottom);
+        }
+
+        /* -----------------------------------------------------------
+           2. BASE ARCHITECTURE & RESET
+        ----------------------------------------------------------- */
+        * {
+            margin: 0; padding: 0; box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            outline: none !important;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            padding-bottom: 110px;
+        }
+
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* -----------------------------------------------------------
+           3. MINIMIZED HEADER (NANO DESIGN)
+        ----------------------------------------------------------- */
+        .header-nano {
+            height: 58px; 
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            padding: 0 16px;
+            position: sticky;
+            top: 0;
+            z-index: 2000;
+            background: rgba(5, 5, 5, 0.85);
+            backdrop-filter: blur(25px);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .nano-search {
+            background: var(--panel-lite);
+            border: 1px solid var(--border);
+            border-radius: 50px;
+            padding: 5px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100px;
+            transition: width 0.4s cubic-bezier(0.2, 1, 0.2, 1);
+        }
+
+        .nano-search:focus-within {
+            width: 140px;
+            border-color: var(--accent);
+        }
+
+        .nano-search input {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 9px;
+            font-weight: 700;
+            width: 100%;
+        }
+
+        .brand-nano h1 {
+            font-size: 11px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.3em;
+            color: #fff;
+        }
+
+        /* -----------------------------------------------------------
+           4. MICRO-PILLAR NAVIGATION (COMPACT)
+        ----------------------------------------------------------- */
+        .pillar-strip {
+            display: flex;
+            background: #000;
+            padding: 3px;
+            border-radius: 10px;
+            margin: 12px 16px;
+            border: 1px solid var(--border);
+            position: relative;
+        }
+
+        .pillar-node {
+            flex: 1;
+            text-align: center;
+            padding: 6px 0;
+            font-size: 7.5px;
+            font-weight: 800;
+            border-radius: 8px;
+            color: var(--text-dim);
+            cursor: pointer;
+            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .pillar-node.active {
+            background: var(--accent);
+            color: white;
+            box-shadow: 0 4px 10px var(--accent-glow);
+        }
+
+        /* -----------------------------------------------------------
+           5. PRODUCT GRID (HORIZONTAL 2-COLUMN)
+        ----------------------------------------------------------- */
+        .artifact-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            padding: 0 16px;
+        }
+
+        .artifact-card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 8px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease;
+            animation: cardFadeUp 0.6s ease backwards;
+        }
+
+        @keyframes cardFadeUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .img-box {
+            aspect-ratio: 1;
+            border-radius: 14px;
+            overflow: hidden;
+            background: #000;
+            position: relative;
+        }
+
+        .img-box img {
+            width: 100%; height: 100%;
+            object-fit: cover;
+            transition: transform 0.6s ease;
+        }
+
+        .artifact-card:active .img-box img { transform: scale(1.08); }
+
+        .tag {
+            position: absolute; top: 6px; left: 6px;
+            padding: 2px 6px; border-radius: 5px;
+            font-size: 6.5px; font-weight: 900; z-index: 10;
+            text-transform: uppercase;
+        }
+        .tag-festive { background: #f59e0b; color: #000; }
+
+        .price-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 8px;
+        }
+
+        .p-now { font-size: 10px; font-weight: 900; color: var(--accent); }
+        .p-old { font-size: 7px; color: var(--text-dim); text-decoration: line-through; }
+
+        .btn-buy {
+            width: 100%;
+            background: var(--accent);
+            color: white;
+            padding: 10px;
+            border-radius: 12px;
+            font-size: 8px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 10px;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        /* -----------------------------------------------------------
+           6. DYNAMIC 5-ITEM DOCK
+        ----------------------------------------------------------- */
+        .dock-anchor {
+            position: fixed;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 5000;
+            padding-bottom: var(--safe-bottom);
+        }
+
+        .dock-ui {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 28px;
+            padding: 6px;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+        }
+
+        /* Updated CSS to match dock-btn class */
+        .dock-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 58px;
+            height: 50px;
+            border-radius: 20px;
+            color: var(--text-dim);
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .dock-btn i { font-size: 14px; margin-bottom: 3px; }
+        .dock-btn span { font-size: 6.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px; }
+
+        .dock-btn.active {
+            color: white;
+            background: var(--accent);
+            box-shadow: 0 6px 12px var(--accent-glow);
+        }
+
+        .dock-btn:active { transform: scale(0.9); }
+
+        /* SKELETON */
+        .shimmer {
+            background: linear-gradient(90deg, #0d0d0f 25%, #18181b 50%, #0d0d0f 75%);
+            background-size: 200% 100%;
+            animation: move-shimmer 1.5s infinite;
+        }
+        @keyframes move-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        #os-notifier {
+            position: fixed; top: 75px; left: 50%; transform: translateX(-50%);
+            background: #fff; color: #000; padding: 8px 20px; border-radius: 50px;
+            font-size: 8px; font-weight: 900; text-transform: uppercase;
+            z-index: 9999; opacity: 0; pointer-events: none; transition: 0.4s;
+        }
+
+    </style>
+</head>
+<body class="hide-scroll">
+
+    <div id="os-notifier">Nexus Synchronized</div>
+
+    <header class="header-nano">
+        <div class="header-left">
+            <div class="nano-search">
+                <i class="fas fa-search text-zinc-600 text-[8px]"></i>
+                <input type="text" id="os-search" placeholder="Artifact ID..." autocomplete="off">
+            </div>
+        </div>
+
+        <div class="brand-nano">
+            <h1>Fantasy</h1>
+        </div>
+
+        <div class="header-right flex justify-end">
+            <button onclick="location.href='../../gateway.html'" class="w-8 h-8 rounded-full bg-zinc-900 border border-white/5 flex items-center justify-center">
+                <i class="fas fa-user-shield text-zinc-600 text-xs"></i>
+            </button>
+        </div>
+    </header>
+
+    <nav class="pillar-strip">
+        <div onclick="Engine.setCat('all')" id="cat-all" class="pillar-node active">ALL</div>
+        <div onclick="Engine.setCat('Frame')" id="cat-Frame" class="pillar-node">FRAME</div>
+        <div onclick="Engine.setCat('Gift')" id="cat-Gift" class="pillar-node">GIFT</div>
+        <div onclick="Engine.setCat('Other')" id="cat-Other" class="pillar-node">OTHER</div>
+    </nav>
+
+    <main id="artifact-feed" class="artifact-grid">
+        <div class="artifact-card shimmer h-52"></div>
+        <div class="artifact-card shimmer h-52"></div>
+        <div class="artifact-card shimmer h-52"></div>
+        <div class="artifact-card shimmer h-52"></div>
+    </main>
+
+    <div class="dock-anchor">
+        <nav class="dock-ui">
+            <a href="#" class="dock-btn active" id="dock-shop">
+                <i class="fas fa-shopping-bag"></i>
+                <span>Shop</span>
+            </a>
+            
+            <a href="../../kart.html" class="dock-btn" id="dock-kart">
+                <i class="fas fa-box-open"></i>
+                <span>Kart</span>
+            </a>
+            
+            <a href="../../user.html" class="dock-btn" id="dock-profile">
+                <i class="fas fa-user-circle"></i>
+                <span>User</span>
+            </a>
+            
+            <a href="../../play.html" class="dock-btn" id="dock-games">
+                <i class="fas fa-gamepad"></i>
+                <span>Play</span>
+            </a>
+            
+            <a href="../../blog.html" class="dock-btn" id="dock-blog">
+                <i class="fas fa-stream"></i>
+                <span>Blog</span>
+            </a>
+        </nav>
+    </div>
+
+    <script type="module">
+        import { db } from 'https://patel-102.github.io/Fantasy/firebase2.js';
+        import { collection, query, where, onSnapshot, orderBy } from 'https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js';
+
+        /**
+         * FANTASY OS ENGINE v4.0.0
+         */
+        const Engine = {
+            state: {
+                pillar: "all",
+                query: "",
+                data: [],
+                listener: null
+            },
+
+            // 1. BOOT SEQUENCE
+            init() {
+                console.log("Engine: Sequence Start...");
+                this.bindEvents();
+                this.sync();
+                this.alert("Warehouse Connected");
+            },
+
+            // 2. DOM EVENT BINDINGS
+            bindEvents() {
+                const search = document.getElementById('os-search');
+                search.addEventListener('input', (e) => {
+                    this.state.query = e.target.value.toLowerCase();
+                    this.render();
+                });
+
+                // Global haptic feedback
+                document.querySelectorAll('.dock-btn, .pillar-node').forEach(el => {
+                    el.addEventListener('click', () => this.haptic(25));
+                });
+            },
+
+            // 3. CATEGORY HANDLER
+            setCat(val) {
+                if (this.state.pillar === val) return;
+                this.state.pillar = val;
+
+                document.querySelectorAll('.pillar-node').forEach(n => n.classList.remove('active'));
+                const activeNode = document.getElementById(`cat-${val}`);
+                if(activeNode) activeNode.classList.add('active');
+
+                this.haptic(35);
+                this.sync();
+            },
+
+            // 4. CLOUD SYNCHRONIZATION
+            sync() {
+                // Unsubscribe from previous listener to prevent memory leaks
+                if (this.state.listener) this.state.listener();
+                
+                const col = collection(db, "products");
+                let q;
+
+                if (this.state.pillar === "all") {
+                    q = query(col, orderBy("createdAt", "desc"));
+                } else {
+                    q = query(col, where("category", "==", this.state.pillar), orderBy("createdAt", "desc"));
+                }
+
+                this.state.listener = onSnapshot(q, (snap) => {
+                    this.state.data = [];
+                    snap.forEach(doc => {
+                        this.state.data.push({ id: doc.id, ...doc.data() });
+                    });
+                    this.render();
+                }, (error) => {
+                    console.error("Sync Error:", error);
+                    this.alert("Sync Interrupted");
+                });
+            },
+
+            // 5. NANO RENDERING LOOP
+            render() {
+                const feed = document.getElementById('artifact-feed');
+                if(!feed) return;
+                feed.innerHTML = "";
+
+                const filter = this.state.data.filter(i => 
+                    i.name.toLowerCase().includes(this.state.query)
+                );
+
+                if (filter.length === 0) {
+                    feed.innerHTML = `<div class="col-span-full py-20 text-center opacity-20 text-[9px] font-black uppercase">Null Result</div>`;
+                    return;
+                }
+
+                filter.forEach((item, idx) => {
+                    const card = document.createElement('div');
+                    card.className = "artifact-card";
+                    card.style.animationDelay = `${idx * 0.03}s`;
+                    
+                    // Fixed Price calculation
+                    const currentPrice = Number(item.price);
+                    const oldPrice = currentPrice + 300;
+
+                    // KEEPING DETAILS LINK AS REQUESTED
+                    card.innerHTML = `
+                        <div onclick="location.href='details.html?id=${item.id}'" class="flex-1 cursor-pointer">
+                            <div class="img-box">
+                                ${item.festiveTitle ? `<div class="tag tag-festive">${item.festiveTitle}</div>` : ''}
+                                <img src="${item.mainImage}" alt="${item.name}" loading="lazy">
+                            </div>
+                            <div class="mt-2.5 px-1">
+                                <p class="text-[8.5px] font-bold text-white uppercase truncate tracking-wide">${item.name}</p>
+                                <div class="price-group">
+                                    <span class="p-now">₹${currentPrice}</span>
+                                    <span class="p-old">₹${oldPrice}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button onclick="location.href='details.html?id=${item.id}'" class="btn-buy">
+                            <i class="fas fa-bolt-lightning text-[7px]"></i> Purchase
+                        </button>
+                    `;
+                    feed.appendChild(card);
+                });
+            },
+
+            // 6. HARDWARE & SYSTEM UTILS
+            haptic(v) {
+                if ("vibrate" in navigator) navigator.vibrate(v);
+            },
+
+            alert(m) {
+                const toast = document.getElementById('os-notifier');
+                if(!toast) return;
+                toast.innerText = m;
+                toast.style.opacity = "1";
+                toast.style.transform = "translateX(-50%) translateY(8px)";
+                setTimeout(() => {
+                    toast.style.opacity = "0";
+                    toast.style.transform = "translateX(-50%) translateY(0)";
+                }, 2500);
+            }
+        };
+
+        window.Engine = Engine;
+        document.addEventListener('DOMContentLoaded', () => Engine.init());
+
+    </script>
+</body>
+</html>
