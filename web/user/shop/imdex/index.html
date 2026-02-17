@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gateway (Decrypted)</title>
+
+<style>
+    :root {
+        --primary: #00ffcc;
+        --bg: #050505;
+        --dim: #1a1a1a;
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        background: var(--bg);
+        overflow: hidden;
+        height: 100vh;
+        width: 100vw;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    #gateway-visuals {
+        position: relative;
+        width: 300px;
+        height: 300px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .core-ring {
+        position: absolute;
+        width: 120px;
+        height: 120px;
+        border: 2px solid rgba(0, 255, 204, 0.1);
+        border-radius: 50%;
+        box-shadow: 0 0 20px rgba(0, 255, 204, 0.05);
+    }
+
+    .scanner-beam {
+        position: absolute;
+        width: 100%;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, var(--primary), transparent);
+        top: 50%;
+        animation: scan 2s ease-in-out infinite;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+
+    canvas#particle-layer {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 10;
+    }
+
+    #secure-progress {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 180px;
+        height: 3px;
+        background: var(--dim);
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    #secure-bar {
+        height: 100%;
+        width: 0%;
+        background: var(--primary);
+        box-shadow: 0 0 10px var(--primary);
+        transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .error-state #secure-bar {
+        background: #ff3333;
+        box-shadow: 0 0 10px #ff3333;
+    }
+    .error-state .core-ring {
+        border-color: rgba(255, 51, 51, 0.3);
+    }
+
+    @keyframes scan {
+        0% { transform: translateY(-50px) scaleX(0.5); opacity: 0; }
+        50% { transform: translateY(0) scaleX(1); opacity: 1; }
+        100% { transform: translateY(50px) scaleX(0.5); opacity: 0; }
+    }
+</style>
+</head>
+<body>
+
+    <div id="gateway-visuals">
+        <canvas id="particle-layer"></canvas>
+        <div class="core-ring"></div>
+        <div class="scanner-beam" id="scanner"></div>
+
+        <div id="secure-progress">
+            <div id="secure-bar"></div>
+        </div>
+    </div>
+
+<script type="module">
+/**
+ * ==========================================
+ * GATEWAY v3.0 (Decrypted / Transparent)
+ * ==========================================
+ */
+
+import { auth, db } from 'https://patel-102.github.io/Fantasy/firebase2.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js';
+import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js';
+
+/* ------------------------------------------------
+   CLASS: VISUAL CONTROLLER
+   Handles canvas animations (Unchanged)
+   ------------------------------------------------ */
+class VisualController {
+    constructor() {
+        this.canvas = document.getElementById('particle-layer');
+        this.ctx = this.canvas.getContext('2d');
+        this.bar = document.getElementById('secure-bar');
+        this.scanner = document.getElementById('scanner');
+        this.container = document.getElementById('gateway-visuals');
+
+        this.width = 300;
+        this.height = 300;
+        this.canvas.width = this.width;
+        this.canvas.height = this.height;
+
+        this.particles = [];
+        this.active = true;
+
+        this.initParticles();
+        this.animate();
+    }
+
+    initParticles() {
+        for(let i = 0; i < 40; i++) {
+            this.particles.push({
+                x: this.width / 2,
+                y: this.height / 2,
+                angle: Math.random() * Math.PI * 2,
+                velocity: 0.5 + Math.random(),
+                size: Math.random() * 2,
+                life: Math.random() * 100
+            });
+        }
+    }
+
+    setProgress(percent) {
+        this.bar.style.width = `${percent}%`;
+        if(percent > 20) this.scanner.style.opacity = '1';
+    }
+
+    setError() {
+        this.container.classList.add('error-state');
+        this.scanner.style.display = 'none';
+    }
+
+    animate() {
+        if(!this.active) return;
+
+        this.ctx.clearRect(0, 0, this.width, this.height);
+        this.ctx.fillStyle = '#00ffcc';
+
+        this.particles.forEach((p) => {
+            p.life--;
+            p.x += Math.cos(p.angle) * p.velocity;
+            p.y += Math.sin(p.angle) * p.velocity;
+
+            this.ctx.globalAlpha = p.life / 100;
+            this.ctx.beginPath();
+            this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            this.ctx.fill();
+
+            if(p.life <= 0) {
+                p.x = this.width / 2;
+                p.y = this.height / 2;
+                p.life = 100;
+                p.velocity = 0.5 + Math.random();
+            }
+        });
+
+        requestAnimationFrame(this.animate.bind(this));
+    }
+}
+
+/* ------------------------------------------------
+   CLASS: GATEWAY ENGINE (Decrypted)
+   Directly passes data without encryption.
+   ------------------------------------------------ */
+class GatewayEngine {
+    constructor() {
+        this.ui = new VisualController();
+        this.config = {
+            TARGET_URL: "web/user/shop/shop.html",
+            MIN_LOAD_TIME: 1500 
+        };
+        this.startTime = Date.now();
+    }
+
+    async init() {
+        this.ui.setProgress(10);
+        onAuthStateChanged(auth, (user) => this.handleAuth(user));
+    }
+
+    async handleAuth(user) {
+        if (!user) {
+            this.redirectLogin();
+            return;
+        }
+
+        try {
+            this.ui.setProgress(30);
+
+            // 1. Fetch User Role
+            const role = await this.fetchRole(user.uid);
+            this.ui.setProgress(60);
+
+            // 2. Generate Transparent Token (No Encryption)
+            // We use Base64 just to keep the URL clean, but it is NOT encrypted.
+            const token = this.generateTransparentToken(user, role);
+            this.ui.setProgress(90);
+
+            // 3. Wait for visual effect
+            const elapsed = Date.now() - this.startTime;
+            const remaining = Math.max(0, this.config.MIN_LOAD_TIME - elapsed);
+
+            setTimeout(() => {
+                this.ui.setProgress(100);
+                this.finalize(token);
+            }, remaining);
+
+        } catch (error) {
+            console.error("Gateway Failure:", error);
+            this.ui.setError();
+            setTimeout(() => window.location.href = "login.html", 3000);
+        }
+    }
+
+    async fetchRole(uid) {
+        // Direct read from Firestore
+        const userRef = doc(db, "users", uid);
+        const snap = await getDoc(userRef);
+        if (snap.exists()) {
+            return snap.data().role || "user";
+        }
+        return "guest";
+    }
+
+    generateTransparentToken(user, role) {
+        // Plain JSON object
+        const payload = {
+            uid: user.uid,
+            role: role,
+            email: user.email, // Added email for clarity
+            timestamp: Date.now(),
+            status: "verified"
+        };
+
+        // Convert to JSON string
+        const jsonString = JSON.stringify(payload);
+
+        // Encode to Base64 (Readable via atob() function)
+        // This is strictly for URL transport, not security.
+        return btoa(jsonString);
+    }
+
+    finalize(token) {
+        // Redirects to target with the transparent token
+        const destination = `${this.config.TARGET_URL}?data=${token}`;
+        window.location.replace(destination);
+    }
+
+    redirectLogin() {
+        this.ui.setProgress(100);
+        setTimeout(() => {
+            window.location.replace("login.html");
+        }, 500);
+    }
+}
+
+// Start Engine
+const gateway = new GatewayEngine();
+gateway.init();
+
+</script>
+
+</body>
+</html>
