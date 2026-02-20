@@ -6,8 +6,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 /* =========================================================
    🟣 SUPABASE CONFIG
    ========================================================= */
-const SUPABASE_URL = "https://zpcewxucdwwzszibtfrh.supabase.co";
-const SUPABASE_ANON_KEY ="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpwY2V3eHVjZHd3enN6aWJ0ZnJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4MDM0OTAsImV4cCI6MjA4MTM3OTQ5MH0.BoOHFGyA_hc-HJip4dvkAHBBuNMdgd1W6xHB-JGGJ1U";
+const SUPABASE_URL = "https://bqqrqwihewcpirhtqqde.supabase.co";
+const SUPABASE_ANON_KEY ="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxcXJxd2loZXdjcGlyaHRxcWRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1Njk0MzEsImV4cCI6MjA4NzE0NTQzMX0.XuuUAyyNqCUQWDXB5ejovNahVScB9j4jWw6l9Hjb3ic";
 
 export const supabase = createClient(
   SUPABASE_URL,
@@ -17,7 +17,7 @@ export const supabase = createClient(
 /* =========================================================
    🟣 STORAGE BUCKET (CASE-SENSITIVE)
    ========================================================= */
-const BUCKET_NAME = "Future";
+const BUCKET_NAME = "king";
 
 /* =========================================================
    🚀 UPLOAD WITH REAL PROGRESS (CORS SAFE)
@@ -32,7 +32,7 @@ export function uploadWithProgress(path, file, onProgress) {
     const xhr = new XMLHttpRequest();
 
     const uploadUrl =
-      `${SUPABASE_URL}/storage/v1/object/${BUCKET_NAME}/${path}`;
+      `${SUPABASE_URL}/storage/v1/object/${king}/${path}`;
 
     /* ---------- OPEN REQUEST ---------- */
     xhr.open("PUT", uploadUrl, true);
@@ -59,7 +59,7 @@ export function uploadWithProgress(path, file, onProgress) {
         resolve({
           success: true,
           path,
-          bucket: BUCKET_NAME,
+          bucket: king,
         });
       } else {
         reject({
