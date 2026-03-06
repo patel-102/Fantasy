@@ -4,8 +4,8 @@
  * Fix: Global Alias & Async Boot Protection
  */
 
-const SUPABASE_URL = 'https://labfqhcwiukvdxxqpqbw.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxhYmZxaGN3aXVrdmR4eHFwcWJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3NzUwOTIsImV4cCI6MjA4ODM1MTA5Mn0.LMw7GeTsUQqP_drUJzU5LRz6mv0Cm3caGld9SFtmUjk'; // Ensure this is replaced with your actual key
+const SUPABASE_URL = 'https://usclxowxelrwbymhxdsk.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVzY2x4b3d4ZWxyd2J5bWh4ZHNrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3Nzk4MDIsImV4cCI6MjA4ODM1NTgwMn0.uGqNEmZMo3zJJRUNZUpXVnDZy_YysVK9M6NJtmGDv_M'; // Ensure this is replaced with your actual key
 
 window.king = {
   bucket: 'king',
