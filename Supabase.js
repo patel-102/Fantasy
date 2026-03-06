@@ -1,75 +1,84 @@
 /**
- * 👑 KING ENGINE v2.1
- * Centralized Supabase Storage + Auth
- * Private Mail Media System
+ * 👑 KING ENGINE v2.2 - OPTIMIZED
+ * Centralized Supabase Storage + Auth + Media
+ * Fix: Global Alias & Async Boot Protection
  */
 
 const SUPABASE_URL = 'https://labfqhcwiukvdxxqpqbw.supabase.co';
-const SUPABASE_ANON_KEY = 'YOUR_ANON_KEY';
+const SUPABASE_ANON_KEY = 'YOUR_ANON_KEY'; // Ensure this is replaced with your actual key
 
 window.king = {
-
   bucket: 'king',
   client: null,
+  isReady: false,
 
   // =========================
   // INIT ENGINE
   // =========================
   init() {
-
-    if (!window.supabase?.createClient) {
-      console.error("Supabase not loaded");
-      return false;
+    // 1. Check if Supabase library is actually loaded in the browser
+    if (typeof supabase === 'undefined' || !supabase.createClient) {
+      return false; 
     }
 
-    this.client = supabase.createClient(
-      SUPABASE_URL,
-      SUPABASE_ANON_KEY,
-      {
-        auth: {
-          persistSession: true,
-          autoRefreshToken: true
+    try {
+      this.client = supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_ANON_KEY,
+        {
+          auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: true
+          }
         }
-      }
-    );
+      );
 
-    console.log("👑 KING Engine Online");
-    window.dispatchEvent(new CustomEvent("KingReady"));
-    return true;
+      // 2. CRITICAL FIX: Create a global alias for your UI scripts
+      window.supabaseClient = this.client; 
+
+      this.isReady = true;
+      console.log("👑 KING Engine Online & Global Alias Set");
+      
+      // Dispatch event for UI listeners
+      window.dispatchEvent(new CustomEvent("KingReady"));
+      return true;
+    } catch (err) {
+      console.error("KING Engine Boot Failure:", err.message);
+      return false;
+    }
   },
 
-
   // =========================
-  // AUTH USER
+  // AUTH HELPERS (Optimized)
   // =========================
   async user() {
-    const { data } = await this.client.auth.getUser();
-    return data.user;
+    if (!this.client) return null;
+    const { data: { user }, error } = await this.client.auth.getUser();
+    if (error) return null;
+    return user;
   },
 
+  async getSession() {
+    if (!this.client) return { data: { session: null } };
+    return await this.client.auth.getSession();
+  },
 
   // =========================
   // SECURE FILE UPLOAD
   // =========================
   async upload(file, folder = "mail") {
-
     try {
-
       const user = await this.user();
-      if (!user) throw new Error("Login required");
+      if (!user) throw new Error("Unauthorized: Identity required");
 
       const ext = file.name.split('.').pop();
-
-      const filename =
-        Date.now() +
-        "_" +
-        crypto.randomUUID().slice(0, 8) +
-        "." +
-        ext;
-
+      const filename = `${Date.now()}_${crypto.randomUUID().slice(0, 8)}.${ext}`;
+      
+      // Pathing: user_id/folder/filename
       const path = `${user.id}/${folder}/${filename}`;
 
-      const { error } = await this.client.storage
+      const { data, error } = await this.client.storage
         .from(this.bucket)
         .upload(path, file, {
           cacheControl: "3600",
@@ -80,103 +89,93 @@ window.king = {
 
       return {
         success: true,
-        path,
+        path: data.path,
+        fullPath: path,
         owner: user.id
       };
-
     } catch (err) {
-
       console.error("Upload Failed:", err.message);
-
-      return {
-        success: false,
-        error: err.message
-      };
-
+      return { success: false, error: err.message };
     }
   },
-
 
   // =========================
   // PRIVATE MEDIA LINK
   // =========================
   async getLink(path, expire = 3600) {
-
+    if (!path) return null;
     const { data, error } = await this.client.storage
       .from(this.bucket)
       .createSignedUrl(path, expire);
 
-    if (error) return null;
-
+    if (error) {
+      console.error("Link Generation Error:", error.message);
+      return null;
+    }
     return data.signedUrl;
   },
 
-
   // =========================
-  // DELETE FOR EVERYONE
+  // DELETE FOR EVERYONE (Optimized)
   // =========================
   async deleteForEveryone(messageId) {
-
     try {
-
       const user = await this.user();
       if (!user) throw new Error("Auth required");
 
-      // fetch message
+      // 1. Atomic Fetch
       const { data: msg, error } = await this.client
         .from("messages")
         .select("id, sender_id, receiver_id, media_path")
         .eq("id", messageId)
         .single();
 
-      if (error) throw error;
+      if (error || !msg) throw new Error("Message not found");
 
-      if (
-        msg.sender_id !== user.id &&
-        msg.receiver_id !== user.id
-      ) {
-        throw new Error("Not allowed");
+      // 2. Permission Check (Sender or Receiver only)
+      if (msg.sender_id !== user.id && msg.receiver_id !== user.id) {
+        throw new Error("Permission Denied");
       }
 
-      // delete storage file
+      // 3. Parallel Cleanup
+      const tasks = [];
+      
+      // Remove from Storage
       if (msg.media_path) {
-        await this.client.storage
-          .from(this.bucket)
-          .remove([msg.media_path]);
+        tasks.push(this.client.storage.from(this.bucket).remove([msg.media_path]));
       }
+      
+      // Remove from Database
+      tasks.push(this.client.from("messages").delete().eq("id", messageId));
 
-      // delete message record
-      const { error: dbError } = await this.client
-        .from("messages")
-        .delete()
-        .eq("id", messageId);
-
-      if (dbError) throw dbError;
+      const results = await Promise.all(tasks);
+      const hasError = results.some(res => res.error);
+      
+      if (hasError) throw new Error("Partial deletion failure");
 
       return { success: true };
-
     } catch (err) {
-
-      return {
-        success: false,
-        error: err.message
-      };
-
+      console.error("Purge Error:", err.message);
+      return { success: false, error: err.message };
     }
-
   }
-
 };
 
-
 // =========================
-// AUTO BOOT
+// SAFE AUTO BOOT SEQUENCE
 // =========================
+(function() {
+  let attempts = 0;
+  const maxAttempts = 50; // 5 seconds total
 
-const KING_BOOT = setInterval(() => {
+  const KING_BOOT = setInterval(() => {
+    attempts++;
+    if (window.king.init()) {
+      clearInterval(KING_BOOT);
+    } else if (attempts >= maxAttempts) {
+      clearInterval(KING_BOOT);
+      console.error("KING ENGINE: Critical Load Timeout. Check script order.");
+    }
+  }, 100);
+})();
 
-  if (window.king.init()) {
-    clearInterval(KING_BOOT);
-  }
-
-}, 100);
