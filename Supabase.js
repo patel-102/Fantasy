@@ -5,7 +5,7 @@
  */
 
 const SUPABASE_URL = 'https://labfqhcwiukvdxxqpqbw.supabase.co';
-const SUPABASE_ANON_KEY = 'YOUR_ANON_KEY'; // Ensure this is replaced with your actual key
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxhYmZxaGN3aXVrdmR4eHFwcWJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3NzUwOTIsImV4cCI6MjA4ODM1MTA5Mn0.LMw7GeTsUQqP_drUJzU5LRz6mv0Cm3caGld9SFtmUjk'; // Ensure this is replaced with your actual key
 
 window.king = {
   bucket: 'king',
@@ -178,4 +178,3 @@ window.king = {
     }
   }, 100);
 })();
-
