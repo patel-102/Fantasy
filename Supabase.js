@@ -1,78 +1,182 @@
 /**
- * KING ENGINE v2.0 - Centralized Storage & Auth 
- * Dependencies: Supabase JS CDN
+ * 👑 KING ENGINE v2.1
+ * Centralized Supabase Storage + Auth
+ * Private Mail Media System
  */
 
 const SUPABASE_URL = 'https://labfqhcwiukvdxxqpqbw.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxhYmZxaGN3aXVrdmR4eHFwcWJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3NzUwOTIsImV4cCI6MjA4ODM1MTA5Mn0.LMw7GeTsUQqP_drUJzU5LRz6mv0Cm3caGld9SFtmUjk';
+const SUPABASE_ANON_KEY = 'YOUR_ANON_KEY';
 
 window.king = {
-  bucket: 'king',
 
-  // 1. Initialize Supabase
+  bucket: 'king',
+  client: null,
+
+  // =========================
+  // INIT ENGINE
+  // =========================
   init() {
-    if (!window.supabase?.createClient) return false;
-    window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    console.log("👑 KING Engine: Online");
-    window.dispatchEvent(new CustomEvent('KingReady'));
+
+    if (!window.supabase?.createClient) {
+      console.error("Supabase not loaded");
+      return false;
+    }
+
+    this.client = supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_ANON_KEY,
+      {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true
+        }
+      }
+    );
+
+    console.log("👑 KING Engine Online");
+    window.dispatchEvent(new CustomEvent("KingReady"));
     return true;
   },
 
-  // 2. Secure Upload (Handles Pathing & Auth Check)
-  async upload(file, folder = 'mail') {
+
+  // =========================
+  // AUTH USER
+  // =========================
+  async user() {
+    const { data } = await this.client.auth.getUser();
+    return data.user;
+  },
+
+
+  // =========================
+  // SECURE FILE UPLOAD
+  // =========================
+  async upload(file, folder = "mail") {
+
     try {
-      const { data: { user } } = await window.supabaseClient.auth.getUser();
-      if (!user) throw new Error("Auth Required");
+
+      const user = await this.user();
+      if (!user) throw new Error("Login required");
 
       const ext = file.name.split('.').pop();
-      const path = `${user.id}/${folder}/${Date.now()}_${Math.random().toString(36).slice(2, 7)}.${ext}`;
 
-      const { error } = await window.supabaseClient.storage
+      const filename =
+        Date.now() +
+        "_" +
+        crypto.randomUUID().slice(0, 8) +
+        "." +
+        ext;
+
+      const path = `${user.id}/${folder}/${filename}`;
+
+      const { error } = await this.client.storage
         .from(this.bucket)
-        .upload(path, file);
+        .upload(path, file, {
+          cacheControl: "3600",
+          upsert: false
+        });
 
       if (error) throw error;
 
-      // Returns the internal path. Use getLink(path) to view.
-      return { success: true, path };
+      return {
+        success: true,
+        path,
+        owner: user.id
+      };
+
     } catch (err) {
-      console.error("Upload Error:", err.message);
-      return { success: false, error: err.message };
+
+      console.error("Upload Failed:", err.message);
+
+      return {
+        success: false,
+        error: err.message
+      };
+
     }
   },
 
-  // 3. Get Temporary Access Link (For Private Folders)
-  async getLink(path, expires = 3600) {
-    const { data, error } = await window.supabaseClient.storage
+
+  // =========================
+  // PRIVATE MEDIA LINK
+  // =========================
+  async getLink(path, expire = 3600) {
+
+    const { data, error } = await this.client.storage
       .from(this.bucket)
-      .createSignedUrl(path, expires);
-    return error ? null : data.signedUrl;
+      .createSignedUrl(path, expire);
+
+    if (error) return null;
+
+    return data.signedUrl;
   },
 
-  // 4. Permanent Shred (DB + Physical)
-  async shred(messageId, storagePath = null) {
-    try {
-      // Delete DB record first
-      const { error: dbErr } = await window.supabaseClient
-        .from('messages')
-        .delete()
-        .eq('id', messageId);
-      
-      if (dbErr) throw dbErr;
 
-      // If physical file exists, remove it
-      if (storagePath) {
-        await window.supabaseClient.storage.from(this.bucket).remove([storagePath]);
+  // =========================
+  // DELETE FOR EVERYONE
+  // =========================
+  async deleteForEveryone(messageId) {
+
+    try {
+
+      const user = await this.user();
+      if (!user) throw new Error("Auth required");
+
+      // fetch message
+      const { data: msg, error } = await this.client
+        .from("messages")
+        .select("id, sender_id, receiver_id, media_path")
+        .eq("id", messageId)
+        .single();
+
+      if (error) throw error;
+
+      if (
+        msg.sender_id !== user.id &&
+        msg.receiver_id !== user.id
+      ) {
+        throw new Error("Not allowed");
       }
+
+      // delete storage file
+      if (msg.media_path) {
+        await this.client.storage
+          .from(this.bucket)
+          .remove([msg.media_path]);
+      }
+
+      // delete message record
+      const { error: dbError } = await this.client
+        .from("messages")
+        .delete()
+        .eq("id", messageId);
+
+      if (dbError) throw dbError;
+
       return { success: true };
+
     } catch (err) {
-      return { success: false, error: err.message };
+
+      return {
+        success: false,
+        error: err.message
+      };
+
     }
+
   }
+
 };
 
-// Auto-boot sequence
-const bootTimer = setInterval(() => {
-  if (window.king.init()) clearInterval(bootTimer);
-}, 100);
 
+// =========================
+// AUTO BOOT
+// =========================
+
+const KING_BOOT = setInterval(() => {
+
+  if (window.king.init()) {
+    clearInterval(KING_BOOT);
+  }
+
+}, 100);
