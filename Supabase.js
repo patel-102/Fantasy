@@ -3,8 +3,8 @@
  * Updated for Private Folders & Permanent Deletion
  */
 
-const SUPABASE_URL = 'https://bqqrqwihewcpirhtqqde.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxcXJxd2loZXdjcGlyaHRxcWRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1Njk0MzEsImV4cCI6MjA4NzE0NTQzMX0.XuuUAyyNqCUQWDXB5ejovNahVScB9j4jWw6l9Hjb3ic';
+const SUPABASE_URL = 'https://labfqhcwiukvdxxqpqbw.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxhYmZxaGN3aXVrdmR4eHFwcWJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3NzUwOTIsImV4cCI6MjA4ODM1MTA5Mn0.LMw7GeTsUQqP_drUJzU5LRz6mv0Cm3caGld9SFtmUjk';
 
 window.kingStorage = {
   bucket: 'king',
