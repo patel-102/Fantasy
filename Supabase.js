@@ -1,4 +1,4 @@
-// 🦋 KING Supabase Engine v3 - Optimized for Butterfly UI
+// 🦋 KING Supabase Engine v3.1 - Enhanced Auth Guard
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm"
 
 const SUPABASE_URL = 'https://usclxowxelrwbymhxdsk.supabase.co';
@@ -6,7 +6,6 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const BUCKET = "king";
 
 // 1. INITIALIZE CLIENT
-// Fixed: Using the correct Anon Key variable
 window.supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: {
         persistSession: true,
@@ -17,6 +16,7 @@ window.supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 
 // 2. AUTH LISTENER
 supabase.auth.onAuthStateChange((event, session) => {
+    // If the user logs out from any tab, boot them to login
     if (event === "SIGNED_OUT") {
         location.href = "login.html";
     }
@@ -29,7 +29,11 @@ const STORE_NAME = "profiles";
 async function openDB() {
     return new Promise((resolve, reject) => {
         let req = indexedDB.open(DB_NAME, 1);
-        req.onupgradeneeded = e => e.target.result.createObjectStore(STORE_NAME);
+        req.onupgradeneeded = e => {
+            if (!e.target.result.objectStoreNames.contains(STORE_NAME)) {
+                e.target.result.createObjectStore(STORE_NAME);
+            }
+        };
         req.onsuccess = e => resolve(e.target.result);
         req.onerror = e => reject(e);
     });
@@ -51,18 +55,45 @@ async function cacheGet(key) {
     });
 }
 
-// 4. PROFILE ENGINE
+// 4. CORE ENGINE
 const KING = {
+    /**
+     * AUTH GUARD: Essential for preventing logged-in users 
+     * from seeing the login page and vice-versa.
+     */
+    async checkAuth(isLoginPage = true) {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session && isLoginPage) {
+            // User is logged in but trying to access Login Page -> Redirect to Profile
+            window.location.replace("profile.html"); 
+            return session;
+        } 
+        
+        if (!session && !isLoginPage) {
+            // User is NOT logged in but trying to access Profile -> Redirect to Login
+            window.location.replace("login.html");
+            return null;
+        }
+
+        return session;
+    },
+
     async getSession() {
         const { data: { session } } = await supabase.auth.getSession();
         return session;
     },
 
+    // Shortcut for getting the current logged in user object
+    async getUser() {
+        const session = await this.getSession();
+        return session ? session.user : null;
+    },
+
     async loadProfile(userId) {
-        // Load from local memory first for instant "Butterfly" feel
         let cached = await cacheGet(userId);
         if (cached) {
-            this.refreshProfile(userId); // Background update
+            this.refreshProfile(userId); 
             return cached;
         }
         return this.refreshProfile(userId);
@@ -93,44 +124,14 @@ const KING = {
             .subscribe();
     },
 
-    // 5. PRESENCE & ACTIVITY
-    async startPresence() {
-        const session = await this.getSession();
-        if (!session) return;
-
-        const channel = supabase.channel("online-users");
-        channel.on("presence", { event: "sync" }, () => {
-            // Logic for showing who else is online if needed
-        }).subscribe(async status => {
-            if (status === "SUBSCRIBED") {
-                await channel.track({
-                    user_id: session.user.id,
-                    online_at: new Date().toISOString()
-                });
-            }
-        });
-
-        // Heartbeat for "Last Active"
-        setInterval(async () => {
-            await supabase.from("profiles")
-                .update({ last_active: new Date().toISOString(), online: true })
-                .eq("id", session.user.id);
-        }, 30000);
-    },
-
-    // 6. MEDIA ENGINE (Avatar & Gallery)
+    // 5. MEDIA ENGINE
     async uploadAvatar(file, userId, oldUrl) {
         const path = `avatar/${userId}_${Date.now()}`;
-        
-        const { error: uploadError } = await supabase.storage
-            .from(BUCKET)
-            .upload(path, file);
-        
+        const { error: uploadError } = await supabase.storage.from(BUCKET).upload(path, file);
         if (uploadError) throw uploadError;
 
         const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(path);
 
-        // Cleanup old image to save space
         if (oldUrl && oldUrl.includes(BUCKET)) {
             const oldPath = oldUrl.split(`${BUCKET}/`)[1];
             await supabase.storage.from(BUCKET).remove([oldPath]);
@@ -140,26 +141,7 @@ const KING = {
         return publicUrl;
     },
 
-    async uploadGallery(file, userId, isPublic = true) {
-        const path = `gallery/${userId}_${Date.now()}`;
-        await supabase.storage.from(BUCKET).upload(path, file);
-        const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(path);
-
-        await supabase.from("gallery").insert({
-            user_id: userId,
-            image_url: publicUrl,
-            is_public: isPublic
-        });
-        return publicUrl;
-    },
-
-    async deleteGallery(id, url) {
-        const path = url.split(`${BUCKET}/`)[1];
-        await supabase.storage.from(BUCKET).remove([path]);
-        await supabase.from("gallery").delete().eq("id", id);
-    },
-
-    // 7. AUTH HELPERS
+    // 6. AUTH HELPERS
     async login(email, password) {
         return await supabase.auth.signInWithPassword({ email, password });
     },
@@ -173,10 +155,14 @@ const KING = {
     },
 
     async logout() {
+        // Clear local cache on logout for security
+        let db = await openDB();
+        let tx = db.transaction(STORE_NAME, "readwrite");
+        tx.objectStore(STORE_NAME).clear();
+        
         await supabase.auth.signOut();
-        location.href = "login.html";
+        window.location.replace("login.html");
     }
 };
 
 window.KING = KING;
-
