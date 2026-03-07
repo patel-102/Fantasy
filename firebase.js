@@ -1,26 +1,141 @@
-// Import Firebase SDK (v9 modular)
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
-import { getDatabase } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-database.js";
+/**
+ * KING - Centralized Supabase & Multi-Table Storage Engine
+ * Updated for Private Folders & Permanent Deletion
+ */
 
-const firebaseConfig = {
-  apiKey: "AIzaSyAgauezxBjk7w6hf_gNvv0O2xGBB7yNdTk",
-  authDomain: "myshop-4a2f3.firebaseapp.com",
-  projectId: "myshop-4a2f3",
-  storageBucket: "myshop-4a2f3.firebasestorage.app",
-  messagingSenderId: "732248120499",
-  appId: "1:732248120499:web:73809ec93ba0f530b1a4c6"
+const SUPABASE_URL = 'https://usclxowxelrwbymhxdsk.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVzY2x4b3d4ZWxyd2J5bWh4ZHNrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3Nzk4MDIsImV4cCI6MjA4ODM1NTgwMn0.uGqNEmZMo3zJJRUNZUpXVnDZy_YysVK9M6NJtmGDv_M';
+
+if (typeof window.supabase === 'undefined' || !window.supabase.createClient) {
+  const script = document.createElement('script');
+  script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+  document.head.appendChild(script);
+}
+
+window.kingStorage = {
+  bucket: 'king',
+
+  // 1. Storage Part: Handles physical file uploads
+  async upload(file, folder = 'general') {
+  // 1. Private Upload: Saves to [user_id]/[folder]/[filename]
+  async upload(file, folder = 'mail') {
+    try {
+      const { data: { user } } = await window.supabase.auth.getUser();
+      if (!user) throw new Error("Auth required.");
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${folder}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+      // Pathing: UserID/Folder/Timestamp_Random.ext
+      const filePath = `${user.id}/${folder}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+      const { data, error } = await window.supabase.storage
+        .from(this.bucket)
+        .upload(fileName, file);
+        .upload(filePath, file);
+
+      if (error) throw error;
+
+      const { data: { publicUrl } } = window.supabase.storage
+        .from(this.bucket)
+        .getPublicUrl(fileName);
+        .getPublicUrl(filePath);
+
+      return publicUrl;
+      return { url: publicUrl, path: filePath }; // Return path for future deletion
+    } catch (err) {
+      console.error("Storage Error:", err.message);
+      return null;
+    }
+  },
+
+  // 2. Multi-Table Sync: Saves text to 'profiles' and media to 'profile_media'
+  async saveFullProfile(textData, mediaData) {
+  // 2. Permanent Delete: Removes from DB and physical Storage
+  async shredMessage(messageId, storagePath = null) {
+    try {
+      const { data: { user } } = await window.supabase.auth.getUser();
+      
+      // Update Part 1: Profiles (Text/Docs)
+      const p1 = window.supabase
+        .from('profiles')
+        .update(textData)
+        .eq('id', user.id);
+      // Step A: Remove physical file if path exists
+      if (storagePath) {
+        await window.supabase.storage
+          .from(this.bucket)
+          .remove([storagePath]);
+      }
+
+      // Step B: Remove DB Record
+      const { error } = await window.supabase
+        .from('messages')
+        .delete()
+        .eq('id', messageId);
+
+      // Update Part 2: Profile Media (Links)
+      const p2 = window.supabase
+        .from('profile_media')
+        .update(mediaData)
+        .eq('profile_id', user.id);
+      if (error) throw error;
+      return { success: true };
+    } catch (err) {
+      console.error("Shred Error:", err.message);
+      return { success: false };
+    }
+  },
+
+  async saveFullProfile(textData, mediaData) {
+    try {
+      const { data: { user } } = await window.supabase.auth.getUser();
+      const p1 = window.supabase.from('profiles').update(textData).eq('id', user.id);
+      const p2 = window.supabase.from('profile_media').update(mediaData).eq('profile_id', user.id);
+      const [res1, res2] = await Promise.all([p1, p2]);
+      
+      if (res1.error) throw res1.error;
+      if (res2.error) throw res2.error;
+
+      if (res1.error || res2.error) throw new Error("Sync Failed");
+      return { success: true };
+    } catch (err) {
+      console.error("Sync Error:", err.message);
+      return { success: false, error: err.message };
+    }
+  },
+
+  // Helper to fetch joined data
+  async getCombinedProfile(targetId) {
+    const { data, error } = await window.supabase
+      .from('profiles')
+      .select(`
+        *,
+        profile_media (avatar_url, gallery)
+      `)
+      .eq('id', targetId)
+      .single();
+    
+    return { data, error };
+  }
 };
 
+// Initialization Logic
+const initSupabase = () => {
+  try {
+    window.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    window.dispatchEvent(new CustomEvent('KingReady'));
+    console.log("👑 KING Engine: Triple-Split Architecture Online");
+    console.log("👑 KING Engine: Secure Storage & Shredding Online");
+  } catch (error) {
+    console.error("Boot Error", error);
+  }
+};
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-
-// Initialize Services
-const auth = getAuth(app);
-const db = getFirestore(app);
-const rtdb = getDatabase(app);
-
-// Export services
-export { auth, db, rtdb };
+// Wait for CDN script to load
+const checkLibrary = setInterval(() => {
+  if (window.supabase?.createClient) {
+    initSupabase();
+    clearInterval(checkLibrary);
+  }
+}, 50);
