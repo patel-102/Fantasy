@@ -1,4 +1,4 @@
-// 🦋 KING Supabase Engine v3.1 - Fixed RLS & Auth Guard
+// 🦋 KING Supabase Engine v3.1 - Enhanced for SQL Schema v2.0
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm"
 
 const SUPABASE_URL = 'https://hmuylzufwphaaftyhhxp.supabase.co';
@@ -50,13 +50,11 @@ async function cacheGet(key) {
 // 3. CORE ENGINE
 const KING = {
     async checkAuth(isLoginPage = true) {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
+        const { data: { session } } = await supabase.auth.getSession();
         if (session && isLoginPage) {
             window.location.replace("profile.html"); 
             return session;
         } 
-
         if (!session && !isLoginPage) {
             window.location.replace("login.html");
             return null;
@@ -67,73 +65,77 @@ const KING = {
     async loadProfile(userId) {
         if (!userId) return null;
         let cached = await cacheGet(userId);
-        // Background refresh
         this.refreshProfile(userId); 
         return cached || this.refreshProfile(userId);
     },
 
     async refreshProfile(userId) {
-        let { data, error } = await supabase
+        let { data } = await supabase
             .from("profiles")
             .select("*")
             .eq("id", userId)
-            .maybeSingle(); // Better than .single() to avoid 406 errors
+            .maybeSingle();
 
         if (data) cacheSet(userId, data);
         return data;
     },
 
-    subscribeProfile(userId, callback) {
-        return supabase.channel(`profile:${userId}`)
-            .on("postgres_changes", {
-                event: "*",
-                schema: "public",
-                table: "profiles",
-                filter: `id=eq.${userId}`
-            }, payload => {
-                const newData = payload.new || payload.old;
-                cacheSet(userId, newData);
-                if (callback) callback(newData);
-            })
-            .subscribe();
-    },
-
-    // 4. MEDIA ENGINE - Fixed RLS for Storage
+    // 4. MEDIA ENGINE - Optimized for your SQL storage_path logic
     async uploadAvatar(file, userId, oldUrl) {
-        // 1. Upload new file
         const fileExt = file.name.split('.').pop();
-        const fileName = `avatar/${userId}/${Date.now()}.${fileExt}`;
-        
+        const storagePath = `avatar/${userId}/${Date.now()}.${fileExt}`;
+
         const { error: uploadError } = await supabase.storage
             .from(BUCKET)
-            .upload(fileName, file, { upsert: true });
+            .upload(storagePath, file, { upsert: true });
 
         if (uploadError) throw uploadError;
 
-        // 2. Get Public URL
-        const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(fileName);
+        const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(storagePath);
 
-        // 3. Delete old file if exists
+        // Delete old file from storage if it exists
         if (oldUrl && oldUrl.includes(BUCKET)) {
             try {
                 const oldPath = oldUrl.split(`${BUCKET}/`)[1];
                 await supabase.storage.from(BUCKET).remove([oldPath]);
-            } catch (e) { console.warn("Old avatar cleanup failed"); }
+            } catch (e) { console.warn("Cleanup failed"); }
         }
 
-        // 4. Update Profile DB (Crucial: Use .update().eq() for RLS)
+        // Update DB - matches your profiles table schema
         const { error: dbError } = await supabase
             .from("profiles")
-            .update({ avatar_url: publicUrl, last_active: new Date().toISOString() })
+            .update({ 
+                avatar_url: publicUrl, 
+                last_active: new Date().toISOString() 
+            })
             .eq('id', userId);
 
         if (dbError) throw dbError;
-        
         return publicUrl;
     },
 
-    async login(email, password) {
-        return await supabase.auth.signInWithPassword({ email, password });
+    async uploadToGallery(file, userId) {
+        const fileName = `${Date.now()}_${file.name.replace(/\s/g, '_')}`;
+        const storagePath = `gallery/${userId}/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+            .from(BUCKET)
+            .upload(storagePath, file);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(storagePath);
+
+        // Matches your gallery table schema exactly
+        const { error: dbError } = await supabase.from("gallery").insert({
+            user_id: userId,
+            image_url: publicUrl,
+            storage_path: storagePath, // Required for your RLS policy
+            is_public: true
+        });
+
+        if (dbError) throw dbError;
+        return publicUrl;
     },
 
     async logout() {
