@@ -1,8 +1,8 @@
 // 🦋 KING Supabase Engine v3.1 - Fixed RLS & Auth Guard
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm"
 
-const SUPABASE_URL = 'https://usclxowxelrwbymhxdsk.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVzY2x4b3d4ZWxyd2J5bWh4ZHNrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3Nzk4MDIsImV4cCI6MjA4ODM1NTgwMn0.uGqNEmZMo3zJJRUNZUpXVnDZy_YysVK9M6NJtmGDv_M';
+const SUPABASE_URL = 'https://hmuylzufwphaaftyhhxp.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhtdXlsenVmd3BoYWFmdHloaHhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5MDE5MjIsImV4cCI6MjA4ODQ3NzkyMn0.1lpVqMl1IRG1OP_juJwnmY4OeXNzeUpe3-sj9W8PWk0';
 const BUCKET = "king";
 
 // 1. INITIALIZE CLIENT
