@@ -1,4 +1,4 @@
-// 🦋 KING Supabase Engine v3.2 - Presence & SQL v2.0 Optimized
+// 🦋 KING Supabase Engine v3.3 - Presence & SQL v2.0 Optimized
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm"
 
 const SUPABASE_URL = 'https://hmuylzufwphaaftyhhxp.supabase.co';
@@ -32,19 +32,23 @@ async function openDB() {
 }
 
 async function cacheSet(key, value) {
-    let db = await openDB();
-    let tx = db.transaction(STORE_NAME, "readwrite");
-    tx.objectStore(STORE_NAME).put(value, key);
+    try {
+        let db = await openDB();
+        let tx = db.transaction(STORE_NAME, "readwrite");
+        tx.objectStore(STORE_NAME).put(value, key);
+    } catch (e) { console.error("Cache Set Fail", e); }
 }
 
 async function cacheGet(key) {
-    let db = await openDB();
-    return new Promise(resolve => {
-        let tx = db.transaction(STORE_NAME, "readonly");
-        let req = tx.objectStore(STORE_NAME).get(key);
-        req.onsuccess = () => resolve(req.result);
-        req.onerror = () => resolve(null);
-    });
+    try {
+        let db = await openDB();
+        return new Promise(resolve => {
+            let tx = db.transaction(STORE_NAME, "readonly");
+            let req = tx.objectStore(STORE_NAME).get(key);
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => resolve(null);
+        });
+    } catch (e) { return null; }
 }
 
 // 3. CORE ENGINE
@@ -52,6 +56,7 @@ const KING = {
     // --- AUTH & HEARTBEAT ---
     async checkAuth(isLoginPage = true) {
         const { data: { session } } = await supabase.auth.getSession();
+        
         if (session && isLoginPage) {
             window.location.replace("profile.html"); 
             return session;
@@ -60,42 +65,66 @@ const KING = {
             window.location.replace("login.html");
             return null;
         }
-        // Start Presence Heartbeat if session exists
-        if (session) this.startHeartbeat(session.user.id);
-        return session;
+
+        if (session) {
+            this.startHeartbeat(session.user.id);
+            return session;
+        }
+        return null;
     },
 
     startHeartbeat(userId) {
         if (!userId || window.presenceInterval) return;
-        
-        const update = async () => {
+
+        const pulse = async () => {
             await supabase.from("profiles").update({ 
                 last_active: new Date().toISOString() 
             }).eq('id', userId);
         };
 
-        update(); // Initial burst
-        window.presenceInterval = setInterval(update, 90000); // Pulse every 90s
+        pulse(); 
+        window.presenceInterval = setInterval(pulse, 90000); // 90s pulse for 120s SQL window
     },
 
     // --- PROFILE FETCHING ---
     async loadProfile(userId) {
         if (!userId) return null;
-        let cached = await cacheGet(userId);
-        this.refreshProfile(userId); 
-        return cached || this.refreshProfile(userId);
+        
+        // Return cached for speed, refresh in background
+        const cached = await cacheGet(userId);
+        const refreshPromise = this.refreshProfile(userId);
+        
+        return cached || await refreshPromise;
     },
 
     async refreshProfile(userId) {
-        // Querying the VIEW specifically to get 'online' status
-        let { data } = await supabase
+        // Querying the VIEW for computed fields like 'age' and 'online'
+        let { data, error } = await supabase
             .from("profiles_view")
             .select("*")
             .eq("id", userId)
             .maybeSingle();
 
-        if (data) cacheSet(userId, data);
-        return data;
+        if (data && !error) {
+            await cacheSet(userId, data);
+            // Trigger UI update event
+            window.dispatchEvent(new CustomEvent('profileFresh', { detail: data }));
+            return data;
+        }
+        return null;
+    },
+
+    // --- UPDATE PROFILE ---
+    async updateProfile(userId, updates) {
+        // Always update the TABLE, not the view
+        const { data, error } = await supabase
+            .from("profiles")
+            .update({ ...updates, last_active: new Date().toISOString() })
+            .eq('id', userId)
+            .select();
+
+        if (!error) await this.refreshProfile(userId);
+        return { data, error };
     },
 
     // --- MEDIA ENGINE ---
@@ -111,26 +140,19 @@ const KING = {
 
         const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(storagePath);
 
+        // Cleanup old file from storage if exists
         if (oldUrl && oldUrl.includes(BUCKET)) {
             try {
                 const oldPath = oldUrl.split(`${BUCKET}/`)[1];
                 await supabase.storage.from(BUCKET).remove([oldPath]);
-            } catch (e) { console.warn("Cleanup failed"); }
+            } catch (e) { console.warn("Old avatar cleanup skipped"); }
         }
 
-        const { error: dbError } = await supabase
-            .from("profiles")
-            .update({ 
-                avatar_url: publicUrl, 
-                last_active: new Date().toISOString() 
-            })
-            .eq('id', userId);
-
-        if (dbError) throw dbError;
+        await this.updateProfile(userId, { avatar_url: publicUrl });
         return publicUrl;
     },
 
-    async uploadToGallery(file, userId) {
+    async uploadToGallery(file, userId, isPublic = true) {
         const fileName = `${Date.now()}_${file.name.replace(/\s/g, '_')}`;
         const storagePath = `gallery/${userId}/${fileName}`;
 
@@ -146,21 +168,35 @@ const KING = {
             user_id: userId,
             image_url: publicUrl,
             storage_path: storagePath,
-            is_public: true
+            is_public: isPublic
         });
 
         if (dbError) throw dbError;
         return publicUrl;
     },
 
+    async toggleGalleryPrivacy(userId, isPublic) {
+        return await supabase
+            .from("gallery")
+            .update({ is_public: isPublic })
+            .eq('user_id', userId);
+    },
+
+    // --- LOGOUT ---
     async logout() {
         if (window.presenceInterval) clearInterval(window.presenceInterval);
-        let db = await openDB();
-        let tx = db.transaction(STORE_NAME, "readwrite");
-        tx.objectStore(STORE_NAME).clear();
+        
+        // Clear Cache
+        try {
+            let db = await openDB();
+            let tx = db.transaction(STORE_NAME, "readwrite");
+            tx.objectStore(STORE_NAME).clear();
+        } catch (e) {}
+
         await supabase.auth.signOut();
         window.location.replace("login.html");
     }
 };
 
 window.KING = KING;
+export default KING;
