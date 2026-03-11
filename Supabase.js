@@ -1,8 +1,9 @@
 // 🦋 KING Supabase Engine v3.3 - Presence & SQL v2.0 Optimized
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm"
 
-const SUPABASE_URL = 'https://hmuylzufwphaaftyhhxp.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhtdXlsenVmd3BoYWFmdHloaHhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5MDE5MjIsImV4cCI6MjA4ODQ3NzkyMn0.1lpVqMl1IRG1OP_juJwnmY4OeXNzeUpe3-sj9W8PWk0';
+const SUPABASE_URL = 'https://bhxukeluodxikwbbtiig.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJoeHVrZWx1b2R4aWt3YmJ0aWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxOTY3MjcsImV4cCI6MjA4ODc3MjcyN30.8w1-uaeR74sP2JRotrnhPvflApFrf7YEI8GpEdDKJAQ';
+
 const BUCKET = "king";
 
 // 1. INITIALIZE CLIENT
