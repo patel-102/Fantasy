@@ -2,7 +2,8 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm"
 
 const SUPABASE_URL = 'https://jovsphoilwbdtvhecpcq.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp3ZGp5dHBubWVueXd6enVleGpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTQ4MjIsImV4cCI6MjA4OTU5MDgyMn0.RofipnAgWyr0qE9vQCoYKvioIS-fKRP0zDTTS35E4uI';
+
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvdnNwaG9pbHdiZHR2aGVjcGNxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwODQ0MDcsImV4cCI6MjA4OTY2MDQwN30._3LsfK2RtEx1Mfp4-uOAYzik5P1vtenVGGcfitOnFI4';
 
 const BUCKET = "king";
 
