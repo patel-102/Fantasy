@@ -9,8 +9,10 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 
 // =====================================================
-// 🔐 SUPABASE ZERO TRUST CLIENT (FINAL)
 // =====================================================
+// 🔐 SUPABASE ZERO TRUST CLIENT (FINAL FIXED)
+// =====================================================
+
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -46,18 +48,13 @@ async function getIP() {
 // =====================================================
 
 export async function register(email, password) {
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password
-  });
-
+  const { data, error } = await supabase.auth.signUp({ email, password });
   if (error) throw error;
-
   return data;
 }
 
 // =====================================================
-// 🔐 LOGIN (ZERO TRUST)
+// 🔐 LOGIN (SMART ZERO TRUST)
 // =====================================================
 
 export async function login(email, password) {
@@ -73,7 +70,7 @@ export async function login(email, password) {
 
   if (error) throw error;
 
-  // Step 2: Create session (SQL)
+  // Step 2: Create session
   const { data: token, error: sessionError } = await supabase.rpc("create_session", {
     p_device: device_id,
     p_ip: ip,
@@ -81,17 +78,20 @@ export async function login(email, password) {
   });
 
   if (sessionError) {
-    await supabase.auth.signOut(); // rollback login
+    await supabase.auth.signOut();
     throw sessionError;
   }
 
-  localStorage.setItem("session_token", token);
+  // ✅ FIX: Handle RECONNECT
+  if (token && token !== "RECONNECTED") {
+    localStorage.setItem("session_token", token);
+  }
 
   return data;
 }
 
 // =====================================================
-// 🔍 VALIDATE SESSION
+// 🔍 VALIDATE SESSION (AUTO HEARTBEAT)
 // =====================================================
 
 export async function validateSession() {
@@ -117,6 +117,16 @@ export async function validateSession() {
 }
 
 // =====================================================
+// ❤️ HEARTBEAT (KEEP USER ONLINE)
+// =====================================================
+
+export function startHeartbeat(interval = 60000) {
+  return setInterval(async () => {
+    await validateSession();
+  }, interval);
+}
+
+// =====================================================
 // 🚪 LOGOUT
 // =====================================================
 
@@ -126,13 +136,12 @@ export async function logout() {
 }
 
 // =====================================================
-// 🔔 REALTIME LOGIN ALERT LISTENER (FIXED)
+// 🔔 REALTIME LOGIN ALERT LISTENER
 // =====================================================
 
 export async function listenLoginAlerts(callback) {
 
   const { data: { user } } = await supabase.auth.getUser();
-
   if (!user) return;
 
   return supabase
@@ -143,7 +152,7 @@ export async function listenLoginAlerts(callback) {
         event: "INSERT",
         schema: "public",
         table: "login_alerts",
-        filter: `user_id=eq.${user.id}` // ✅ VERY IMPORTANT
+        filter: `user_id=eq.${user.id}`
       },
       (payload) => {
         callback(payload.new);
