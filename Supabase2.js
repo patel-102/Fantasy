@@ -3,8 +3,8 @@
 // =====================================================
 
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-const SUPABASE_URL = 'https://rjuvhuyvbqhhamrqvxoe.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJqdXZodXl2YnFoaGFtcnF2eG9lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0MjU0MjMsImV4cCI6MjA5MDAwMTQyM30.cuYgRiGuYj41yMZYrMzpu0MEESARro-p_cTli3HsU6s';
+const SUPABASE_URL = 'https://fopbcnphuglewivzpxnh.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZvcGJjbnBodWdsZXdpdnpweG5oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0MzM4NTYsImV4cCI6MjA5MDAwOTg1Nn0.EB9UfsvCrqlQAUAmJGQPZz1FoYbQ_R5oZspqGQ0nwuU';
 
 
 
