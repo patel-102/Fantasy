@@ -1,8 +1,8 @@
 // Import Firebase SDK (v9 modular)
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
-import { getDatabase } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-database.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+import { getDatabase } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAAxA2Paas-tT0R2SHcoHZWmX_IaT92CsA",
