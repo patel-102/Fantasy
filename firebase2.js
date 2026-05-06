@@ -1,4 +1,6 @@
-// Use the Compatibility Script for WebView Stability
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+
 const firebaseConfig = {
   apiKey: "AIzaSyAAxA2Paas-tT0R2SHcoHZWmX_IaT92CsA",
   authDomain: "moon-2263a.firebaseapp.com",
@@ -8,18 +10,18 @@ const firebaseConfig = {
   appId: "1:6395103280:web:f4a0f0141936dc968805f5"
 };
 
-// Initialize Firebase using the global window object
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 
-window.registerUser = function(email, password) {
-    auth.createUserWithEmailAndPassword(email, password)
-        .then(function(user) { Android.onSuccess("Success!"); })
-        .catch(function(error) { Android.onError(error.message); });
+// ATTACH TO WINDOW SO JAVA CAN CALL THEM
+window.loginUser = function(email, password) {
+    signInWithEmailAndPassword(auth, email, password)
+        .then((user) => { Android.onLoginSuccess("Welcome!"); })
+        .catch((error) => { Android.onLoginError(error.message); });
 };
 
-window.loginUser = function(email, password) {
-    auth.signInWithEmailAndPassword(email, password)
-        .then(function(user) { Android.onLoginSuccess("Welcome!"); })
-        .catch(function(error) { Android.onLoginError(error.message); });
+window.registerUser = function(email, password) {
+    createUserWithEmailAndPassword(auth, email, password)
+        .then((user) => { Android.onSuccess("Account Created!"); })
+        .catch((error) => { Android.onError(error.message); });
 };
