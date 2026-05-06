@@ -1,3 +1,4 @@
+// Import Firebase SDK v12.12.1
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
@@ -12,40 +13,39 @@ const firebaseConfig = {
   appId: "1:6395103280:web:f4a0f0141936dc968805f5"
 };
 
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const rtdb = getDatabase(app);
 
-// --- LOGIC FOR ANDROID BRIDGE ---
-
-// 1. Registration Logic
+// --- REGISTER FUNCTION ---
 window.registerUser = function(email, password) {
     createUserWithEmailAndPassword(auth, email, password)
         .then((userCredential) => {
-            // Talk back to RegisterActivity.java
-            if (typeof Android !== "undefined") {
-                Android.onSuccess("Account Created for: " + email);
+            if (typeof Android !== 'undefined') {
+                // Calls onSuccess in RegisterActivity.java
+                Android.onSuccess("Account created: " + email);
             }
         })
         .catch((error) => {
-            if (typeof Android !== "undefined") {
+            if (typeof Android !== 'undefined') {
                 Android.onError(error.message);
             }
         });
 };
 
-// 2. Login Logic
+// --- LOGIN FUNCTION ---
 window.loginUser = function(email, password) {
     signInWithEmailAndPassword(auth, email, password)
         .then((userCredential) => {
-            // Talk back to LoginActivity.java
-            if (typeof Android !== "undefined") {
-                Android.onLoginSuccess("Welcome " + email);
+            if (typeof Android !== 'undefined') {
+                // Calls onLoginSuccess in LoginActivity.java
+                Android.onLoginSuccess("Welcome back: " + email);
             }
         })
         .catch((error) => {
-            if (typeof Android !== "undefined") {
+            if (typeof Android !== 'undefined') {
                 Android.onLoginError(error.message);
             }
         });
